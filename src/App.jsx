@@ -113,6 +113,35 @@ const ORGS = {
     link:"https://www.cb11m.org" },
 };
 
+// Lightweight, fully client-side matcher behind the "what do you care about?"
+// input — no backend/LLM call. Good enough for a handful of topics and orgs;
+// a larger org catalog would want real classification instead of substring hits.
+const CATEGORY_KEYWORDS = {
+  env_health: ["air", "asthma", "pollution", "clean air", "water quality", "drinking water", "diesel", "smog", "toxic", "lead", "chemical", "health", "clean water"],
+  climate:    ["climate", "energy", "solar", "wind", "renewable", "carbon", "emissions", "coal", "gas", "power plant", "fossil fuel", "warming", "sea level", "flood"],
+  land:       ["park", "parks", "tree", "trees", "green space", "nature", "wildlife", "forest", "waterfront", "hiking", "outdoors", "conservation", "garden"],
+  justice:    ["justice", "equity", "community", "low-income", "vulnerable", "frontline", "advocacy", "policy", "organizing", "civic", "fairness"],
+};
+const ORG_KEYWORDS = {
+  sc_atlantic:    ["sierra club", "public lands", "regional advocacy", "litigation"],
+  sc_nyc:         ["sierra club", "nyc group", "manhattan", "local advocacy"],
+  weact:          ["environmental justice", "harlem", "we act", "asthma", "air quality"],
+  ny_renews:      ["clean energy", "climate justice", "renewable", "coalition", "clcpa"],
+  riverside_park: ["riverside park", "park", "green space", "waterfront"],
+  hrp:            ["hudson river park", "waterfront", "pier", "river"],
+  central_park:   ["central park", "park", "tree", "green space"],
+  les_ecology:    ["composting", "recycling", "lower east side", "environmental education"],
+  trees_ny:       ["urban forest", "tree", "planting", "pruner"],
+};
+function matchInterests(text) {
+  const q = text.toLowerCase();
+  if (!q.trim()) return { categories: [], orgs: [] };
+  return {
+    categories: Object.keys(CATEGORY_KEYWORDS).filter(id => CATEGORY_KEYWORDS[id].some(kw => q.includes(kw))),
+    orgs:       Object.keys(ORG_KEYWORDS).filter(id => ORG_KEYWORDS[id].some(kw => q.includes(kw))),
+  };
+}
+
 const LOCATION_DATA = {
   "33140": {
     "location": "Miami Beach, FL",
@@ -1452,15 +1481,47 @@ function CategoryGroupedList({ items, tense, tabId, interests, onOrgClick, openS
   );
 }
 
-// A single, always-live-editing preferences screen — replaces the previous
-// separate "View" bottom sheet and "Interests" save/cancel panel. Every
-// choice here applies immediately; there is nothing to save or cancel.
+// A single, always-live-editing preferences screen. "What do you care
+// about?" replaces separate topic/org checklists — the user describes
+// their interests in their own words (typed or dictated) and matchInterests
+// maps that in the background to topics and organizations. No Save button;
+// everything here applies as soon as it's decided, including the mapping.
 function PreferencesPanel({ skinId, onSkinChange, interests, onInterestsChange, onClose }) {
   const C    = useContext(CContext);
   const skin = useContext(SkinContext);
-  const toggleCat = id => onInterestsChange({ ...interests, categories: interests.categories.includes(id) ? interests.categories.filter(c => c !== id) : [...interests.categories, id] });
-  const toggleOrg = id => onInterestsChange({ ...interests, orgs: interests.orgs.includes(id) ? interests.orgs.filter(o => o !== id) : [...interests.orgs, id] });
-  const nycOrgs = ["sc_atlantic","sc_nyc","weact","ny_renews","riverside_park","hrp","central_park","les_ecology","trees_ny"];
+  const [query, setQuery]         = useState(interests.query || "");
+  const [listening, setListening] = useState(false);
+  const speechSupported = typeof window !== "undefined" && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const matched = matchInterests(query);
+      onInterestsChange({ query, categories: matched.categories, orgs: matched.orgs });
+    }, 450);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
+
+  const dictate = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR || listening) return;
+    const recognition = new SR();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = e => {
+      const transcript = e.results[0][0].transcript;
+      setQuery(prev => (prev.trim() ? `${prev.trim()}, ${transcript}` : transcript));
+    };
+    recognition.onerror = () => setListening(false);
+    recognition.onend = () => setListening(false);
+    setListening(true);
+    recognition.start();
+  };
+
+  const matchedCats = skin.categories.filter(c => interests.categories.includes(c.id));
+  const matchedOrgs = interests.orgs.map(id => ORGS[id]).filter(Boolean);
+
   return (
     <div style={{ position:"absolute", inset:0, zIndex:300, background:C.bg, display:"flex", flexDirection:"column" }}>
       <div style={{ padding:"52px 20px 16px", borderBottom:`1px solid ${C.border}`, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -1486,35 +1547,45 @@ function PreferencesPanel({ skinId, onSkinChange, interests, onInterestsChange, 
 
         <div style={{ height:1, background:C.border, margin:"22px 0 18px" }} />
 
-        <div style={{ fontSize:11, fontWeight:700, color:C.textLight, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:4 }}>Topics</div>
-        <div style={{ fontSize:12, color:C.textLight, marginBottom:12 }}>Leave all unselected to see everything.</div>
-        {skin.categories.map(cat => {
-          const sel = interests.categories.includes(cat.id);
-          return (
-            <div key={cat.id} onClick={() => toggleCat(cat.id)} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:cat.bg, border:`1.5px solid ${sel ? cat.color : cat.border}`, borderRadius:14, padding:"13px 16px", marginBottom:8, cursor:"pointer", boxShadow:sel ? `0 4px 10px ${cat.color}40` : "none" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:8, fontSize:14, fontWeight:700, color:cat.color }}><span style={{ fontSize:15 }}>{cat.icon}</span>{cat.label}</div>
-              <div style={{ width:22, height:22, borderRadius:7, background:sel ? cat.color : "#fff", border:`1.5px solid ${cat.color}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, color:"#fff" }}>{sel ? "✓" : ""}</div>
+        <div style={{ fontSize:11, fontWeight:700, color:C.textLight, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:4 }}>What do you care about?</div>
+        <div style={{ fontSize:12, color:C.textLight, marginBottom:12 }}>Type or say it in your own words — we'll match it to local topics and organizations for you.</div>
+        <div style={{ display:"flex", alignItems:"center", gap:8, background:C.white, border:`1.5px solid ${C.border}`, borderRadius:14, padding:"4px 6px 4px 14px" }}>
+          <input value={query} onChange={e => setQuery(e.target.value)} placeholder="e.g. clean air, parks, climate change…"
+            style={{ flex:1, minWidth:0, border:"none", outline:"none", background:"transparent", fontSize:14, color:C.forest, fontFamily:"Inter, sans-serif", padding:"10px 0" }} />
+          {query && (
+            <span onMouseDown={e => { e.preventDefault(); setQuery(""); }} style={{ fontSize:13, color:C.textLight, cursor:"pointer", flexShrink:0 }}>✕</span>
+          )}
+          {speechSupported && (
+            <div onClick={dictate} title="Dictate" style={{ width:34, height:34, borderRadius:"50%", flexShrink:0, background:listening ? C.amber : C.greenLight, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+              <span style={{ fontSize:14 }}>{listening ? "●" : "🎙️"}</span>
             </div>
-          );
-        })}
+          )}
+        </div>
 
-        <div style={{ height:1, background:C.border, margin:"22px 0 18px" }} />
-
-        <div style={{ fontSize:11, fontWeight:700, color:C.textLight, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:12 }}>Organizations</div>
-        {nycOrgs.map(orgId => {
-          const org = ORGS[orgId]; if (!org) return null;
-          const sel = interests.orgs.includes(orgId);
-          return (
-            <div key={orgId} onClick={() => toggleOrg(orgId)} style={{ display:"flex", alignItems:"center", gap:12, background:sel ? C.greenLight : C.white, border:`1.5px solid ${sel ? C.green : C.border}`, borderRadius:12, padding:"12px 14px", marginBottom:8, cursor:"pointer" }}>
-              <div style={{ fontSize:20, flexShrink:0 }}>{org.emoji}</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:13, fontWeight:600, color:C.forest }}>{org.name}</div>
-                <div style={{ fontSize:11, color:C.textLight, marginTop:1 }}>{org.shortDesc}</div>
-              </div>
-              <div style={{ width:22, height:22, borderRadius:6, background:sel ? C.green : C.bg, border:`1.5px solid ${sel ? C.green : C.border}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, color:"#fff" }}>{sel ? "✓" : ""}</div>
+        {query.trim() ? (
+          <div style={{ marginTop:16 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:C.textLight, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:10 }}>
+              {matchedCats.length || matchedOrgs.length ? "We matched" : "No matches yet"}
             </div>
-          );
-        })}
+            {matchedCats.length === 0 && matchedOrgs.length === 0 && (
+              <div style={{ fontSize:13, color:C.textLight, lineHeight:1.6 }}>Try a topic like "clean air," "parks," or "climate."</div>
+            )}
+            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+              {matchedCats.map(cat => (
+                <span key={cat.id} style={{ display:"inline-flex", alignItems:"center", gap:6, fontSize:12, fontWeight:700, color:"#fff", background:cat.color, padding:"6px 12px 6px 9px", borderRadius:20 }}>
+                  <span>{cat.icon}</span>{cat.label}
+                </span>
+              ))}
+              {matchedOrgs.map(org => (
+                <span key={org.id} style={{ display:"inline-flex", alignItems:"center", gap:6, fontSize:12, fontWeight:700, color:C.green, background:C.greenLight, border:`1px solid ${C.borderGreen}`, padding:"6px 12px 6px 9px", borderRadius:20 }}>
+                  <span>{org.emoji}</span>{org.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div style={{ marginTop:14, fontSize:12, color:C.textLight }}>Nothing typed yet — you'll see everything in the meantime.</div>
+        )}
       </div>
     </div>
   );
@@ -1569,7 +1640,7 @@ export default function App() {
   const [searching, setSearching]         = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
   const [activeOrg, setActiveOrg]         = useState(null);
-  const [interests, setInterests]         = useState({ categories:[], orgs:[] });
+  const [interests, setInterests]         = useState({ query:"", categories:[], orgs:[] });
   const [geo, setGeo]                     = useState({ status:"locating", distanceMiles:null });
   const [openSummary, setOpenSummary]     = useState(null);
 
