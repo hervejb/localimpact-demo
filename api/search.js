@@ -14,46 +14,76 @@ const Anthropic = require("@anthropic-ai/sdk");
 
 const CATEGORY_IDS = ["env_health", "climate", "land", "justice"];
 
+// Asks Claude for results shaped per-ORGANIZATION (overview, then separate
+// lists of accomplishment and planned-activity bullets, each individually
+// cited) rather than one flat list of items — this is what actually
+// produces multiple well-sourced bullets per org instead of a single thin
+// summary. Each bullet is flattened into the client's existing "items"
+// shape below (toItems), so the UI code needing no changes: a bullet under
+// accomplishments becomes a "past" item, a bullet under plannedActivities
+// becomes a "present" item, both carrying the same org info and their own
+// individual citation link.
+const BULLET_SCHEMA = {
+  type: "object",
+  properties: {
+    category: { type: "string", enum: CATEGORY_IDS },
+    text: { type: "string" },
+    link: { type: "string" },
+    linkLabel: { type: "string" },
+  },
+  required: ["category", "text", "link", "linkLabel"],
+  additionalProperties: false,
+};
+
 const RESULT_SCHEMA = {
   type: "object",
   properties: {
-    items: {
+    organizations: {
       type: "array",
       items: {
         type: "object",
         properties: {
-          tense: { type: "string", enum: ["past", "present"] },
-          category: { type: "string", enum: CATEGORY_IDS },
-          summary: { type: "string" },
-          issue: { type: "string" },
-          why: { type: "string" },
-          done: { type: "string" },
-          outcome: { type: "string" },
-          bulletLink: { type: "string" },
-          bulletLinkLabel: { type: "string" },
-          org: {
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              emoji: { type: "string" },
-              shortDesc: { type: "string" },
-              about: { type: "string" },
-              what: { type: "string" },
-              how: { type: "string" },
-              link: { type: "string" },
-            },
-            required: ["name", "emoji", "shortDesc", "about", "what", "how", "link"],
-            additionalProperties: false,
-          },
+          name: { type: "string" },
+          emoji: { type: "string" },
+          overview: { type: "string" },
+          link: { type: "string" },
+          accomplishments: { type: "array", items: BULLET_SCHEMA },
+          plannedActivities: { type: "array", items: BULLET_SCHEMA },
         },
-        required: ["tense", "category", "summary", "issue", "why", "done", "outcome", "bulletLink", "bulletLinkLabel", "org"],
+        required: ["name", "emoji", "overview", "link", "accomplishments", "plannedActivities"],
         additionalProperties: false,
       },
     },
   },
-  required: ["items"],
+  required: ["organizations"],
   additionalProperties: false,
 };
+
+// Flattens the per-organization schema above into the flat item list the
+// client already knows how to render (searchLive in App.jsx). issue/why are
+// left blank — the bullet's own text plus its citation is the whole point,
+// there's no separate "issue" narrative in this format.
+function orgsToItems(organizations) {
+  const items = [];
+  for (const rawOrg of organizations.slice(0, 4)) {
+    const org = {
+      name: rawOrg.name,
+      emoji: rawOrg.emoji || "🏢",
+      shortDesc: rawOrg.overview,
+      about: rawOrg.overview,
+      what: rawOrg.overview,
+      how: `Visit their site to find ways to volunteer or donate.`,
+      link: rawOrg.link,
+    };
+    for (const b of (rawOrg.accomplishments || []).slice(0, 3)) {
+      items.push({ tense: "past", category: b.category, summary: b.text, issue: "", why: "", done: b.text, outcome: "", bulletLink: b.link, bulletLinkLabel: b.linkLabel, org });
+    }
+    for (const b of (rawOrg.plannedActivities || []).slice(0, 3)) {
+      items.push({ tense: "present", category: b.category, summary: b.text, issue: "", why: "", done: "", outcome: b.text, bulletLink: b.link, bulletLinkLabel: b.linkLabel, org });
+    }
+  }
+  return items;
+}
 
 // Free fallback data source, used only when ANTHROPIC_API_KEY isn't set —
 // e.g. so testers you invite can try the "ask anything anywhere" flow
@@ -101,15 +131,19 @@ async function searchProPublica(topic, locationLabel) {
 }
 
 function systemPrompt() {
-  return `You are a careful local-impact researcher for a civic app. Given a topic and a place, use web search to find REAL, VERIFIABLE nonprofit or civic organizations that have worked on that topic in or near that place.
+  return `You are a careful local-impact researcher for a civic app. Given a topic and a place, use web search to identify REAL, VERIFIABLE non-profit organizations, grassroots groups, or regional coalitions working on that topic in that place.
+
+For each organization, structure your findings as:
+- overview: a 1-2 sentence description of who they are and their core mission in this region.
+- accomplishments: 2-3 concrete, real-world victories they have achieved (specific laws challenged, policy changes won, funds raised, or programs successfully delivered). Each one is its own bullet with its own citation link.
+- plannedActivities: their current campaigns, upcoming projects, or planned initiatives, each paired with the specific, measurable impact they hope to achieve. Each one is its own bullet with its own citation link.
 
 Rules:
-- Every item must be backed by a specific web page you found via search. Put that page's URL in bulletLink and a short human-readable label for it in bulletLinkLabel.
-- Never invent facts, dates, dollar amounts, or outcomes. If you can't verify a specific claim, leave that item out rather than guessing.
-- "tense: past" means a completed, verifiable win. "tense: present" means a genuinely active, ongoing effort you found real evidence for.
-- category must be the single best fit from: env_health (environmental health, clean air/water), climate (climate & energy), land (parks, green space, land use), justice (community, racial, or environmental justice, civic advocacy).
-- The org fields describe the ORGANIZATION itself, not the event — about/what/how should read like a short, accurate org bio, sourced from the org's own site or reliable coverage.
-- Return at most 4 items. If you find fewer than 4 well-sourced results, return fewer — do not pad with weak or unverifiable ones. If you find nothing solid, return an empty items array. An empty result is a correct, honest answer.
+- Every bullet must be backed by a specific web page you found via search — put its URL in that bullet's link and a short human-readable label in linkLabel. Never reuse a placeholder or guessed URL.
+- Never invent facts, dates, dollar amounts, or outcomes. If a claim can't be backed by a real source you found, drop that bullet rather than guessing.
+- Keep bullet language direct, factual, and easy to scan.
+- category (per bullet) must be the single best fit from: env_health (environmental health, clean air/water), climate (climate & energy), land (parks, green space, land use), justice (community, racial, or environmental justice, civic advocacy).
+- Return at most 4 organizations. If you find fewer well-sourced organizations, return fewer — do not pad with weak or unverifiable ones. An organization with zero verifiable accomplishments or planned activities should be dropped. If you find nothing solid, return an empty organizations array — that is a correct, honest answer.
 - Prefer local or regional organizations over large national ones when both exist for the same topic and place.`;
 }
 
@@ -150,14 +184,14 @@ module.exports = async (req, res) => {
     const client = new Anthropic({ apiKey });
     const response = await client.messages.create({
       model: "claude-opus-5",
-      max_tokens: 4096,
+      max_tokens: 8192,
       system: systemPrompt(),
-      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 6 }],
+      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 12 }],
       output_config: { format: { type: "json_schema", schema: RESULT_SCHEMA } },
       messages: [
         {
           role: "user",
-          content: `Topic: ${topic}\nLocation: ${locationLabel || "unknown"}${zip ? ` (${zip})` : ""}\n\nWhich organizations have fought for ${topic} in or near ${locationLabel || "this location"}? Return the data needed to support the app's UI.`,
+          content: `Please research and identify non-profit organizations, grassroots groups, or regional coalitions working on the following topic(s): ${topic}, within the following geographical area: ${locationLabel || "unknown"}${zip ? ` (${zip})` : ""}.`,
         },
       ],
     });
@@ -182,8 +216,8 @@ module.exports = async (req, res) => {
       return;
     }
 
-    const items = Array.isArray(parsed.items) ? parsed.items.slice(0, 4) : [];
-    res.status(200).json({ items });
+    const organizations = Array.isArray(parsed.organizations) ? parsed.organizations : [];
+    res.status(200).json({ items: orgsToItems(organizations) });
   } catch (err) {
     res.status(200).json({ items: [] });
   }

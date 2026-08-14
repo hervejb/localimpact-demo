@@ -573,7 +573,7 @@ const LOCATION_DATA = {
     ]
   },
   "10001": {
-    "location": "Chelsea, New York, NY",
+    "location": "Chelsea, NY",
     "coords": { "lat": 40.7501, "lon": -73.9970 },
     "neighborhoods": [
       "Chelsea",
@@ -1381,22 +1381,29 @@ function readStoredInterests() {
   return null;
 }
 
-// Matches a typed/dictated location description — an address, city, zip,
-// or neighborhood name — against the covered locations. No geocoding API;
-// a direct zip hit wins outright, otherwise the entry whose name/zip/
-// neighborhood list shares the most words with the query wins.
+// Matches a typed/dictated location description against the covered
+// locations, but only when confident: either the whole query is a direct
+// substring of a location's name/zip/neighborhood list, or every
+// significant word in the query appears there. A partial word overlap
+// (e.g. "new" and "york" both showing up just because one label happens to
+// spell out "New York" while its siblings abbreviate to "NY") is NOT
+// treated as a match — it's cheap coincidence, not a real signal, and
+// returning null here lets the caller fall through to real geocoding
+// instead of confidently snapping to the wrong neighborhood.
 function matchLocationQuery(text) {
   const q = text.toLowerCase().trim();
   if (!q) return null;
   if (LOCATION_DATA[q]) return q;
+  const words = q.split(/[\s,]+/).filter(w => w.length > 2);
   let bestZip = null, bestScore = 0;
   for (const zip of Object.keys(LOCATION_DATA)) {
     const entry = LOCATION_DATA[zip];
     const haystack = [entry.location, ...(entry.neighborhoods || []), zip].join(" ").toLowerCase();
-    let score = haystack.includes(q) ? q.length + 5 : 0;
-    if (!score) {
-      const words = q.split(/[\s,]+/).filter(w => w.length > 2);
-      score = words.filter(w => haystack.includes(w)).length;
+    let score = 0;
+    if (haystack.includes(q)) {
+      score = q.length + 5;
+    } else if (words.length && words.every(w => haystack.includes(w))) {
+      score = words.length;
     }
     if (score > bestScore) { bestScore = score; bestZip = zip; }
   }
