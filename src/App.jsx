@@ -1,4 +1,4 @@
-import { useState, createContext, useContext } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
 
 const SKINS = {
   civic: {
@@ -112,6 +112,7 @@ const ORGS = {
 const LOCATION_DATA = {
   "33140": {
     "location": "Miami Beach, FL",
+    "coords": { "lat": 25.8267, "lon": -80.1208 },
     "neighborhoods": [
       "South Beach",
       "Mid-Beach",
@@ -232,6 +233,7 @@ const LOCATION_DATA = {
   },
   "33138": {
     "location": "Miami Shores, FL",
+    "coords": { "lat": 25.8687, "lon": -80.1898 },
     "neighborhoods": [
       "Miami Shores",
       "Upper East Side",
@@ -327,6 +329,7 @@ const LOCATION_DATA = {
   },
   "60637": {
     "location": "Hyde Park, Chicago, IL",
+    "coords": { "lat": 41.7943, "lon": -87.5907 },
     "neighborhoods": [
       "Hyde Park",
       "Kenwood",
@@ -446,6 +449,7 @@ const LOCATION_DATA = {
   },
   "44141": {
     "location": "Brecksville, OH",
+    "coords": { "lat": 41.3251, "lon": -81.6273 },
     "neighborhoods": [
       "Brecksville",
       "Broadview Heights"
@@ -537,6 +541,7 @@ const LOCATION_DATA = {
   },
   "10001": {
     "location": "Chelsea, New York, NY",
+    "coords": { "lat": 40.7501, "lon": -73.9970 },
     "neighborhoods": [
       "Chelsea",
       "Hell's Kitchen",
@@ -617,6 +622,7 @@ const LOCATION_DATA = {
   },
   "10002": {
     "location": "Lower East Side / Chinatown, NY",
+    "coords": { "lat": 40.7168, "lon": -73.9861 },
     "neighborhoods": [
       "Lower East Side",
       "Chinatown",
@@ -697,6 +703,7 @@ const LOCATION_DATA = {
   },
   "10007": {
     "location": "Tribeca / Financial District, NY",
+    "coords": { "lat": 40.7132, "lon": -74.0083 },
     "neighborhoods": [
       "Tribeca",
       "Financial District",
@@ -777,6 +784,7 @@ const LOCATION_DATA = {
   },
   "10011": {
     "location": "West Village / Greenwich Village, NY",
+    "coords": { "lat": 40.7336, "lon": -74.0027 },
     "neighborhoods": [
       "West Village",
       "Greenwich Village",
@@ -857,6 +865,7 @@ const LOCATION_DATA = {
   },
   "10025": {
     "location": "Upper West Side / Morningside Heights, NY",
+    "coords": { "lat": 40.7969, "lon": -73.9707 },
     "neighborhoods": [
       "Upper West Side",
       "Morningside Heights",
@@ -937,6 +946,7 @@ const LOCATION_DATA = {
   },
   "10029": {
     "location": "East Harlem / Spanish Harlem, NY",
+    "coords": { "lat": 40.7957, "lon": -73.9389 },
     "neighborhoods": [
       "East Harlem",
       "El Barrio",
@@ -1017,6 +1027,7 @@ const LOCATION_DATA = {
   },
   "10031": {
     "location": "Harlem, NY",
+    "coords": { "lat": 40.8253, "lon": -73.9490 },
     "neighborhoods": [
       "Central Harlem",
       "Hamilton Heights",
@@ -1097,6 +1108,7 @@ const LOCATION_DATA = {
   },
   "10065": {
     "location": "Upper East Side, NY",
+    "coords": { "lat": 40.7648, "lon": -73.9631 },
     "neighborhoods": [
       "Upper East Side",
       "Lenox Hill",
@@ -1177,6 +1189,7 @@ const LOCATION_DATA = {
   },
   "10128": {
     "location": "Yorkville / Carnegie Hill, NY",
+    "coords": { "lat": 40.7796, "lon": -73.9505 },
     "neighborhoods": [
       "Yorkville",
       "Carnegie Hill",
@@ -1284,6 +1297,34 @@ const NYC_LOCATIONS = [
   { zip:"10128", label:"Yorkville / Carnegie Hill",      sub:"East 80s · East 90s" },
 ];
 
+// Great-circle distance in miles between two lat/lon points.
+function haversineMiles(lat1, lon1, lat2, lon2) {
+  const R = 3958.8;
+  const toRad = d => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Finds the covered location whose centroid is closest to a sensed position.
+function nearestLocation(lat, lon) {
+  let bestZip = null, bestDist = Infinity;
+  for (const zip of Object.keys(LOCATION_DATA)) {
+    const c = LOCATION_DATA[zip].coords;
+    if (!c) continue;
+    const d = haversineMiles(lat, lon, c.lat, c.lon);
+    if (d < bestDist) { bestDist = d; bestZip = zip; }
+  }
+  return { zip: bestZip, distanceMiles: bestDist };
+}
+
+function formatMiles(mi) {
+  if (mi < 0.15) return "right here";
+  if (mi < 10) return `${mi.toFixed(1)} mi away`;
+  return `${Math.round(mi)} mi away`;
+}
+
 function OrgSheet({ orgId, onClose }) {
   const C = useContext(CContext);
   const org = ORGS[orgId];
@@ -1314,9 +1355,9 @@ function OrgSheet({ orgId, onClose }) {
   );
 }
 
-function StoryCard({ item, tense, tabId, onOrgClick }) {
+function StoryCard({ item, tense, tabId, onOrgClick, defaultOpen }) {
   const C = useContext(CContext);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(!!defaultOpen);
   const tc = TAB_COLORS[tabId];
   const isAction = tense === "action";
   const labels = STORY_LABELS[tense];
@@ -1376,7 +1417,7 @@ function StoryCard({ item, tense, tabId, onOrgClick }) {
   );
 }
 
-function CategoryGroupedList({ items, tense, tabId, interests, onOrgClick }) {
+function CategoryGroupedList({ items, tense, tabId, interests, onOrgClick, openSummary }) {
   const C    = useContext(CContext);
   const skin = useContext(SkinContext);
   return (
@@ -1395,7 +1436,10 @@ function CategoryGroupedList({ items, tense, tabId, interests, onOrgClick }) {
                 {cat.label}
               </span>
             </div>
-            {catItems.map((item, i) => <StoryCard key={i} item={item} tense={tense} tabId={tabId} onOrgClick={onOrgClick} />)}
+            {catItems.map((item, i) => {
+              const isHeadlineTarget = item.summary === openSummary;
+              return <StoryCard key={`${i}-${isHeadlineTarget}`} item={item} tense={tense} tabId={tabId} onOrgClick={onOrgClick} defaultOpen={isHeadlineTarget} />;
+            })}
           </div>
         );
       })}
@@ -1532,17 +1576,52 @@ export default function App() {
   const [showMenu, setShowMenu]           = useState(false);
   const [activeOrg, setActiveOrg]         = useState(null);
   const [interests, setInterests]         = useState({ categories:[], orgs:[] });
+  const [geo, setGeo]                     = useState({ status:"locating", distanceMiles:null });
+  const [openSummary, setOpenSummary]     = useState(null);
 
   const skin = SKINS[skinId];
   const C    = makeC(skin);
 
-  const handleSelect       = z  => { setZip(z); setLocData(LOCATION_DATA[z]); setActiveTab("delivered"); };
+  const locateMe = () => {
+    if (!("geolocation" in navigator)) { setGeo({ status:"unsupported", distanceMiles:null }); return; }
+    setGeo({ status:"locating", distanceMiles:null });
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const { latitude, longitude } = pos.coords;
+        const nearest = nearestLocation(latitude, longitude);
+        if (!nearest.zip) { setGeo({ status:"unsupported", distanceMiles:null }); return; }
+        setZip(nearest.zip);
+        setLocData(LOCATION_DATA[nearest.zip]);
+        setActiveTab("delivered");
+        setGeo({ status:"sensed", distanceMiles:nearest.distanceMiles });
+      },
+      () => setGeo({ status:"denied", distanceMiles:null }),
+      { enableHighAccuracy:false, timeout:8000, maximumAge:5 * 60 * 1000 }
+    );
+  };
+
+  useEffect(() => { locateMe(); }, []);
+
+  const handleSelect       = z  => { setZip(z); setLocData(LOCATION_DATA[z]); setActiveTab("delivered"); setGeo({ status:"manual", distanceMiles:null }); };
   const handleSkinChange   = id => { setSkinId(id); setActiveTab("delivered"); };
 
   const tab                 = TABS.find(t => t.id === activeTab);
   const items               = locData[activeTab] || [];
   const currentNeighborhood = NYC_LOCATIONS.find(l => l.zip === zip);
   const hasPrefs            = interests.categories.length > 0 || interests.orgs.length > 0;
+
+  const locationLabel = geo.status === "locating" ? "Finding your location…" : (currentNeighborhood?.label || locData.location);
+  const locationSub   = geo.status === "locating" ? null : (currentNeighborhood?.sub || null);
+  const distanceLabel = geo.status === "sensed"      ? formatMiles(geo.distanceMiles)
+                       : geo.status === "denied"      ? "location off"
+                       : geo.status === "unsupported" ? "location unavailable"
+                       : null;
+  const nearby = geo.status === "sensed" && geo.distanceMiles != null && geo.distanceMiles <= 3;
+
+  const headline = locData.delivered?.[0]  ? { item: locData.delivered[0],  tabId: "delivered" }
+                  : locData.inProgress?.[0] ? { item: locData.inProgress[0], tabId: "inProgress" }
+                  : null;
+  const headlineEyebrow = nearby ? "Right where you're standing" : geo.status === "sensed" ? "Closest covered story" : "Headline for this area";
 
   return (
     <CContext.Provider value={C}>
@@ -1585,14 +1664,28 @@ export default function App() {
               </div>
             </div>
           </div>
-          <div style={{ marginTop:10, display:"flex", alignItems:"center", gap:6 }}>
-            <span style={{ fontSize:12, color:C.green }}>📍</span>
-            <span style={{ fontSize:13, fontWeight:700, color:C.forest }}>{currentNeighborhood?.label || locData.location}</span>
-            {currentNeighborhood && <span style={{ fontSize:11, color:C.textLight, marginLeft:2 }}>{currentNeighborhood.sub}</span>}
+          <div onClick={locateMe} title="Tap to use your current location" style={{ marginTop:10, display:"flex", alignItems:"baseline", flexWrap:"wrap", gap:"2px 6px", cursor:"pointer" }}>
+            <span style={{ fontSize:12, color:geo.status === "locating" ? C.textLight : C.green, alignSelf:"center" }}>📍</span>
+            <span style={{ fontSize:13, fontWeight:700, color:C.forest }}>{locationLabel}</span>
+            {locationSub && <span style={{ fontSize:11, color:C.textLight }}>{locationSub}</span>}
+            {distanceLabel && <span style={{ fontSize:11, color:C.textLight }}>· {distanceLabel}</span>}
+            {(geo.status === "denied" || geo.status === "unsupported") && <span style={{ fontSize:11, color:C.textLight }}>· enable ⟳</span>}
+            {(geo.status === "manual" || geo.status === "sensed") && <span style={{ fontSize:11, color:C.textLight }}>· retry ⟳</span>}
           </div>
         </div>
 
-        <div style={{ display:"flex", flexShrink:0, borderBottom:`1px solid ${C.border}`, background:C.bg }}>
+        {headline && geo.status !== "locating" && (
+          <div onClick={() => { setActiveTab(headline.tabId); setOpenSummary(headline.item.summary); }}
+            style={{ margin:"12px 20px 0", background:C.greenLight, border:`1px solid ${C.borderGreen}`, borderRadius:14, padding:"12px 14px", cursor:"pointer", flexShrink:0 }}>
+            <div style={{ fontSize:10, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:C.green, marginBottom:6 }}>
+              📍 {headlineEyebrow}
+            </div>
+            <div style={{ fontSize:14, fontWeight:700, color:C.forest, lineHeight:1.4 }}>{headline.item.summary}</div>
+            <div style={{ marginTop:6, fontSize:11, color:C.textMid }}>Tap to read the full story →</div>
+          </div>
+        )}
+
+        <div style={{ display:"flex", flexShrink:0, marginTop:12, borderBottom:`1px solid ${C.border}`, background:C.bg }}>
           {TABS.map(t => {
             const tc = TAB_COLORS[t.id];
             const isActive = activeTab === t.id;
@@ -1605,7 +1698,7 @@ export default function App() {
         </div>
 
         <div style={{ flex:1, overflowY:"auto", padding:"16px 20px 32px" }}>
-          <CategoryGroupedList items={items} tense={tab.tense} tabId={activeTab} interests={interests} onOrgClick={setActiveOrg} />
+          <CategoryGroupedList items={items} tense={tab.tense} tabId={activeTab} interests={interests} onOrgClick={setActiveOrg} openSummary={openSummary} />
         </div>
 
         {searching     && <SearchModal    currentZip={zip} onSelect={handleSelect}  onClose={() => setSearching(false)} />}
@@ -1616,7 +1709,12 @@ export default function App() {
       </div>
 
       <div style={{ marginTop:16, fontSize:11, color:"#999", letterSpacing:"0.06em", textTransform:"uppercase", textAlign:"center" }}>
-        Manhattan, New York City · 9 neighborhoods covered
+        {Object.keys(LOCATION_DATA).length} locations covered
+        {geo.status === "sensed"      && ` · using your location (${formatMiles(geo.distanceMiles)})`}
+        {geo.status === "denied"      && " · location off, showing default"}
+        {geo.status === "unsupported" && " · location unavailable, showing default"}
+        {geo.status === "manual"      && " · manually selected"}
+        {geo.status === "locating"    && " · locating…"}
       </div>
     </div>
     </SkinContext.Provider>

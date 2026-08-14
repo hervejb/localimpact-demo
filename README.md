@@ -10,19 +10,29 @@ Deployed at: *(your Vercel URL goes here)*
 
 ## Features
 
-- 📍 Auto-detects your location (defaults to Upper West Side, Manhattan)
+- 📍 Senses your real location via the browser Geolocation API and jumps to the
+  nearest covered area, showing how far away it actually is (falls back to
+  Upper West Side, Manhattan if location is denied or unsupported)
+- 📰 A location-aware headline banner surfaces the single strongest story for
+  wherever you are, tap to jump straight into it
 - 🌿 Two skins: General/Civic and Sierra Club branded
 - 🗂 Three tabs: Won for you · Happening right now · Learn more & act
 - 🏷 Issue categories: Environmental Health, Climate & Energy, Land & Green Space, Community & Justice
-- 🔍 Search across 9 Manhattan neighborhoods
+- 🔍 Manual search across all covered locations
 - ⚙️ Interest filters by topic and organization
 - 🏢 Org badges on every bullet — tap to learn about each organization
 
-## Neighborhoods Covered (Manhattan)
+## Locations Covered
 
-Chelsea · Lower East Side / Chinatown · Tribeca / Financial District ·
+**Manhattan:** Chelsea · Lower East Side / Chinatown · Tribeca / Financial District ·
 West Village / Greenwich Village · Upper West Side · East Harlem ·
 Harlem · Upper East Side · Yorkville / Carnegie Hill
+
+**Elsewhere:** Miami Beach, FL · Miami Shores, FL · Hyde Park (Chicago), IL · Brecksville, OH
+
+Coverage is intentionally small for this demo — sensing your location always
+snaps to whichever of these is nearest, and shows the distance so it's never
+misleading about how close that actually is.
 
 ## Tech Stack
 
