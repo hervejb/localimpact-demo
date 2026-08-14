@@ -1452,28 +1452,44 @@ function CategoryGroupedList({ items, tense, tabId, interests, onOrgClick, openS
   );
 }
 
-function InterestsPanel({ interests, onUpdate, onClose }) {
+// A single, always-live-editing preferences screen — replaces the previous
+// separate "View" bottom sheet and "Interests" save/cancel panel. Every
+// choice here applies immediately; there is nothing to save or cancel.
+function PreferencesPanel({ skinId, onSkinChange, interests, onInterestsChange, onClose }) {
   const C    = useContext(CContext);
   const skin = useContext(SkinContext);
-  const [cats, setCats] = useState([...interests.categories]);
-  const [orgs, setOrgs] = useState([...interests.orgs]);
-  const toggleCat = id => setCats(p => p.includes(id) ? p.filter(c => c !== id) : [...p, id]);
-  const toggleOrg = id => setOrgs(p => p.includes(id) ? p.filter(o => o !== id) : [...p, id]);
-  const save = () => { onUpdate({ categories: cats, orgs }); onClose(); };
+  const toggleCat = id => onInterestsChange({ ...interests, categories: interests.categories.includes(id) ? interests.categories.filter(c => c !== id) : [...interests.categories, id] });
+  const toggleOrg = id => onInterestsChange({ ...interests, orgs: interests.orgs.includes(id) ? interests.orgs.filter(o => o !== id) : [...interests.orgs, id] });
   const nycOrgs = ["sc_atlantic","sc_nyc","weact","ny_renews","riverside_park","hrp","central_park","les_ecology","trees_ny"];
   return (
     <div style={{ position:"absolute", inset:0, zIndex:300, background:C.bg, display:"flex", flexDirection:"column" }}>
-      <div style={{ padding:"52px 20px 16px", borderBottom:`1px solid ${C.border}`, flexShrink:0 }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
-          <div style={{ fontFamily:"Fraunces, serif", fontSize:18, fontWeight:700, color:C.forest }}>What matters to you?</div>
-          <div onClick={onClose} style={{ fontSize:13, fontWeight:600, color:C.textLight, cursor:"pointer" }}>Cancel</div>
-        </div>
-        <div style={{ fontSize:12, color:C.textLight }}>Select topics and organizations to personalize your feed. Leave all unselected to see everything.</div>
+      <div style={{ padding:"52px 20px 16px", borderBottom:`1px solid ${C.border}`, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ fontFamily:"Fraunces, serif", fontSize:18, fontWeight:700, color:C.forest }}>Preferences</div>
+        <div onClick={onClose} style={{ fontSize:13, fontWeight:600, color:C.green, cursor:"pointer" }}>Done</div>
       </div>
-      <div style={{ flex:1, overflowY:"auto", padding:"16px 20px 100px" }}>
-        <div style={{ fontSize:11, fontWeight:700, color:C.textLight, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:12 }}>Topics</div>
+      <div style={{ flex:1, overflowY:"auto", padding:"20px 20px 40px" }}>
+
+        <div style={{ fontSize:11, fontWeight:700, color:C.textLight, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:12 }}>View</div>
+        {Object.values(SKINS).map(s => {
+          const active = s.id === skinId;
+          return (
+            <div key={s.id} onClick={() => onSkinChange(s.id)} style={{ display:"flex", alignItems:"center", gap:14, background:active ? s.tintBg : C.white, border:`1.5px solid ${active ? s.primaryColor : C.border}`, borderRadius:16, padding:"14px 16px", marginBottom:8, cursor:"pointer" }}>
+              <div style={{ width:44, height:44, borderRadius:12, background:s.headerGradient, display:"flex", alignItems:"center", justifyContent:"center", fontSize:21, flexShrink:0, boxShadow:`0 4px 10px ${s.primaryColor}55` }}>{s.logo}</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:14, fontWeight:700, color:C.forest, marginBottom:2 }}>{s.menuLabel}</div>
+                <div style={{ fontSize:12, color:C.textLight }}>{s.menuDesc}</div>
+              </div>
+              {active && <span style={{ color:s.primaryColor, fontSize:18 }}>✓</span>}
+            </div>
+          );
+        })}
+
+        <div style={{ height:1, background:C.border, margin:"22px 0 18px" }} />
+
+        <div style={{ fontSize:11, fontWeight:700, color:C.textLight, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:4 }}>Topics</div>
+        <div style={{ fontSize:12, color:C.textLight, marginBottom:12 }}>Leave all unselected to see everything.</div>
         {skin.categories.map(cat => {
-          const sel = cats.includes(cat.id);
+          const sel = interests.categories.includes(cat.id);
           return (
             <div key={cat.id} onClick={() => toggleCat(cat.id)} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:cat.bg, border:`1.5px solid ${sel ? cat.color : cat.border}`, borderRadius:14, padding:"13px 16px", marginBottom:8, cursor:"pointer", boxShadow:sel ? `0 4px 10px ${cat.color}40` : "none" }}>
               <div style={{ display:"flex", alignItems:"center", gap:8, fontSize:14, fontWeight:700, color:cat.color }}><span style={{ fontSize:15 }}>{cat.icon}</span>{cat.label}</div>
@@ -1481,11 +1497,13 @@ function InterestsPanel({ interests, onUpdate, onClose }) {
             </div>
           );
         })}
-        <div style={{ height:1, background:C.border, margin:"20px 0 16px" }} />
+
+        <div style={{ height:1, background:C.border, margin:"22px 0 18px" }} />
+
         <div style={{ fontSize:11, fontWeight:700, color:C.textLight, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:12 }}>Organizations</div>
         {nycOrgs.map(orgId => {
           const org = ORGS[orgId]; if (!org) return null;
-          const sel = orgs.includes(orgId);
+          const sel = interests.orgs.includes(orgId);
           return (
             <div key={orgId} onClick={() => toggleOrg(orgId)} style={{ display:"flex", alignItems:"center", gap:12, background:sel ? C.greenLight : C.white, border:`1.5px solid ${sel ? C.green : C.border}`, borderRadius:12, padding:"12px 14px", marginBottom:8, cursor:"pointer" }}>
               <div style={{ fontSize:20, flexShrink:0 }}>{org.emoji}</div>
@@ -1497,9 +1515,6 @@ function InterestsPanel({ interests, onUpdate, onClose }) {
             </div>
           );
         })}
-      </div>
-      <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:"16px 20px 32px", background:C.bg, borderTop:`1px solid ${C.border}` }}>
-        <div onClick={save} style={{ background:C.green, borderRadius:14, padding:14, textAlign:"center", fontSize:15, fontWeight:700, color:"#fff", cursor:"pointer" }}>Save preferences</div>
       </div>
     </div>
   );
@@ -1546,39 +1561,13 @@ function SearchModal({ currentZip, onSelect, onClose }) {
   );
 }
 
-function SkinMenu({ activeSkinId, onSelect, onClose }) {
-  return (
-    <div onClick={onClose} style={{ position:"absolute", inset:0, zIndex:400, background:"rgba(0,0,0,0.45)", backdropFilter:"blur(3px)", display:"flex", flexDirection:"column", justifyContent:"flex-end" }}>
-      <div onClick={e => e.stopPropagation()} style={{ background:"#fff", borderRadius:"20px 20px 0 0", padding:"20px 20px 40px" }}>
-        <div style={{ width:36, height:4, background:"#E0DDD5", borderRadius:2, margin:"0 auto 20px" }} />
-        <div style={{ fontFamily:"Fraunces, serif", fontSize:18, fontWeight:700, color:"#1A3D2B", marginBottom:4 }}>Choose a view</div>
-        <div style={{ fontSize:12, color:"#8A9E92", marginBottom:20 }}>Each view shows the same neighborhood through a different lens.</div>
-        {Object.values(SKINS).map(s => {
-          const active = s.id === activeSkinId;
-          return (
-            <div key={s.id} onClick={() => { onSelect(s.id); onClose(); }} style={{ display:"flex", alignItems:"center", gap:14, background:active ? s.tintBg : "#F7F5F0", border:`1.5px solid ${active ? s.primaryColor : "#E7E5EF"}`, borderRadius:16, padding:"14px 16px", marginBottom:10, cursor:"pointer" }}>
-              <div style={{ width:44, height:44, borderRadius:12, background:s.headerGradient, display:"flex", alignItems:"center", justifyContent:"center", fontSize:21, flexShrink:0, boxShadow:`0 4px 10px ${s.primaryColor}55` }}>{s.logo}</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:14, fontWeight:700, color:"#1A3D2B", marginBottom:2 }}>{s.menuLabel}</div>
-                <div style={{ fontSize:12, color:"#8A9E92" }}>{s.menuDesc}</div>
-              </div>
-              {active && <span style={{ color:s.primaryColor, fontSize:18 }}>✓</span>}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 export default function App() {
   const [skinId, setSkinId]               = useState("civic");
   const [zip, setZip]                     = useState("10025");
   const [locData, setLocData]             = useState(LOCATION_DATA["10025"]);
   const [activeTab, setActiveTab]         = useState("delivered");
   const [searching, setSearching]         = useState(false);
-  const [showInterests, setShowInterests] = useState(false);
-  const [showMenu, setShowMenu]           = useState(false);
+  const [showPreferences, setShowPreferences] = useState(false);
   const [activeOrg, setActiveOrg]         = useState(null);
   const [interests, setInterests]         = useState({ categories:[], orgs:[] });
   const [geo, setGeo]                     = useState({ status:"locating", distanceMiles:null });
@@ -1650,33 +1639,26 @@ export default function App() {
           <div style={{ padding:"6px 20px 0" }}>
             <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:8 }}>
               <div>
-                <div style={{ fontFamily:"Fraunces, serif", fontSize:20, fontWeight:900, color:"#fff", letterSpacing:"-0.02em", marginBottom:2 }}>
+                <div style={{ fontFamily:"Fraunces, serif", fontSize:21, fontWeight:900, color:"#fff", letterSpacing:"-0.02em", marginBottom:2 }}>
                   {skin.logo} {skin.appName}
                 </div>
-                <div style={{ fontSize:11, color:"rgba(255,255,255,0.82)" }}>{skin.tagline}</div>
+                <div style={{ fontSize:12, color:"rgba(255,255,255,0.85)" }}>{skin.tagline}</div>
               </div>
-              <div style={{ display:"flex", gap:6, flexShrink:0 }}>
-                <div onClick={() => setShowMenu(true)} style={{ background:"rgba(255,255,255,0.22)", backdropFilter:"blur(6px)", border:"1px solid rgba(255,255,255,0.35)", borderRadius:10, padding:"7px 10px", display:"flex", alignItems:"center", gap:4, cursor:"pointer" }}>
-                  <span style={{ fontSize:14 }}>{skin.logo}</span>
-                  <span style={{ fontSize:11, fontWeight:700, color:"#fff" }}>View</span>
-                </div>
-                <div onClick={() => setShowInterests(true)} style={{ background:hasPrefs ? "#fff" : "rgba(255,255,255,0.22)", backdropFilter:"blur(6px)", border:"1px solid rgba(255,255,255,0.35)", borderRadius:10, padding:"7px 10px", display:"flex", alignItems:"center", gap:4, cursor:"pointer" }}>
-                  <span style={{ fontSize:12 }}>⚙️</span>
-                  <span style={{ fontSize:11, fontWeight:700, color:hasPrefs ? C.green : "#fff" }}>{hasPrefs ? "Filtered" : "Interests"}</span>
-                </div>
-                <div onClick={() => setSearching(true)} style={{ background:"rgba(255,255,255,0.22)", backdropFilter:"blur(6px)", border:"1px solid rgba(255,255,255,0.35)", borderRadius:10, padding:"7px 10px", display:"flex", alignItems:"center", gap:4, cursor:"pointer" }}>
-                  <span style={{ fontSize:12 }}>🔍</span>
-                  <span style={{ fontSize:11, fontWeight:700, color:"#fff" }}>Search</span>
-                </div>
+              <div onClick={() => setShowPreferences(true)} title="Preferences" style={{ position:"relative", flexShrink:0, width:36, height:36, borderRadius:"50%", background:"rgba(255,255,255,0.22)", backdropFilter:"blur(6px)", border:"1px solid rgba(255,255,255,0.35)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+                <span style={{ fontSize:15 }}>⚙️</span>
+                {hasPrefs && <span style={{ position:"absolute", top:-1, right:-1, width:10, height:10, borderRadius:"50%", background:C.amber, border:"2px solid rgba(255,255,255,0.9)" }} />}
               </div>
             </div>
-            <div onClick={locateMe} title="Tap to use your current location" style={{ marginTop:10, display:"flex", alignItems:"baseline", flexWrap:"wrap", gap:"2px 6px", cursor:"pointer" }}>
-              <span style={{ fontSize:12, color:"#fff", alignSelf:"center", opacity:geo.status === "locating" ? 0.6 : 1 }}>📍</span>
-              <span style={{ fontSize:13, fontWeight:700, color:"#fff" }}>{locationLabel}</span>
-              {locationSub && <span style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>{locationSub}</span>}
-              {distanceLabel && <span style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>· {distanceLabel}</span>}
-              {(geo.status === "denied" || geo.status === "unsupported") && <span style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>· enable ⟳</span>}
-              {(geo.status === "manual" || geo.status === "sensed") && <span style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>· retry ⟳</span>}
+            <div style={{ marginTop:12, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 }}>
+              <div onClick={locateMe} title="Tap to use your current location" style={{ display:"flex", alignItems:"baseline", flexWrap:"wrap", gap:"2px 6px", cursor:"pointer" }}>
+                <span style={{ fontSize:12, color:"#fff", alignSelf:"center", opacity:geo.status === "locating" ? 0.6 : 1 }}>📍</span>
+                <span style={{ fontSize:14, fontWeight:700, color:"#fff" }}>{locationLabel}</span>
+                {locationSub && <span style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>{locationSub}</span>}
+                {distanceLabel && <span style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>· {distanceLabel}</span>}
+              </div>
+              <div onClick={() => setSearching(true)} title="Search a location" style={{ flexShrink:0, width:30, height:30, borderRadius:"50%", background:"rgba(255,255,255,0.22)", backdropFilter:"blur(6px)", border:"1px solid rgba(255,255,255,0.35)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+                <span style={{ fontSize:12 }}>🔍</span>
+              </div>
             </div>
           </div>
         </div>
@@ -1709,10 +1691,9 @@ export default function App() {
           <CategoryGroupedList items={items} tense={tab.tense} tabId={activeTab} interests={interests} onOrgClick={setActiveOrg} openSummary={openSummary} />
         </div>
 
-        {searching     && <SearchModal    currentZip={zip} onSelect={handleSelect}  onClose={() => setSearching(false)} />}
-        {showInterests && <InterestsPanel interests={interests} onUpdate={setInterests} onClose={() => setShowInterests(false)} />}
-        {activeOrg     && <OrgSheet       orgId={activeOrg} onClose={() => setActiveOrg(null)} />}
-        {showMenu      && <SkinMenu       activeSkinId={skinId} onSelect={handleSkinChange} onClose={() => setShowMenu(false)} />}
+        {searching       && <SearchModal       currentZip={zip} onSelect={handleSelect} onClose={() => setSearching(false)} />}
+        {activeOrg       && <OrgSheet          orgId={activeOrg} onClose={() => setActiveOrg(null)} />}
+        {showPreferences && <PreferencesPanel  skinId={skinId} onSkinChange={handleSkinChange} interests={interests} onInterestsChange={setInterests} onClose={() => setShowPreferences(false)} />}
 
       </div>
 
