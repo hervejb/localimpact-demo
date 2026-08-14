@@ -1,44 +1,48 @@
 import { useState, useEffect, createContext, useContext } from "react";
 
+// Shared category palette — vivid, distinct hues so a category reads by
+// color alone at a glance, and stays constant no matter which skin is active.
+const CATEGORIES = [
+  { id: "env_health", label: "Environmental Health", icon: "🌬️", color: "#0D9488", bg: "#CCFBF1", border: "#5EEAD4" },
+  { id: "climate",    label: "Climate & Energy",     icon: "⚡",  color: "#EA580C", bg: "#FFEDD5", border: "#FDBA74" },
+  { id: "land",       label: "Land & Green Space",   icon: "🌳", color: "#16A34A", bg: "#DCFCE7", border: "#86EFAC" },
+  { id: "justice",    label: "Community & Justice",  icon: "✊", color: "#7C3AED", bg: "#EDE9FE", border: "#C4B5FD" },
+];
+
 const SKINS = {
   civic: {
     id: "civic", appName: "LocalImpact", logo: "🏙️",
     tagline: "Who\'s been fighting for where you live",
-    primaryColor: "#2A5FA8", accentColor: "#C45D1A",
-    bgColor: "#F5F6FA", shellBg: "#D8DCE8",
+    primaryColor: "#4F46E5", accentColor: "#F59E0B",
+    headerGradient: "linear-gradient(135deg, #6366F1 0%, #8B5CF6 60%, #A855F7 100%)",
+    bgColor: "#FAFAFF", shellBg: "#E4E1F5",
+    tintBg: "#EEF0FF", tintBorder: "#C7D2FE",
     menuLabel: "General / Civic",
     menuDesc: "Everyone fighting for your neighborhood",
     tabs: { delivered: "Won for you", inProgress: "Happening right now", involved: "Learn more & act" },
-    categories: [
-      { id: "env_health", label: "Environmental Health", color: "#2A7A4F", bg: "#EEF7F2", border: "#B8D8C4" },
-      { id: "climate",    label: "Climate & Energy",     color: "#C45D1A", bg: "#FEF3E6", border: "#F0C080" },
-      { id: "land",       label: "Land & Green Space",   color: "#5A8A6A", bg: "#F4FAF6", border: "#C8DDD0" },
-      { id: "justice",    label: "Community & Justice",  color: "#5A5A9A", bg: "#F0F0FA", border: "#C8C8E8" },
-    ],
+    categories: CATEGORIES,
   },
   sierra_club: {
     id: "sierra_club", appName: "LocalImpact", logo: "🌿",
     tagline: "Sierra Club\'s work in your neighborhood",
-    primaryColor: "#2D7A4F", accentColor: "#D47A2A",
-    bgColor: "#F7F5F0", shellBg: "#E8E4DC",
+    primaryColor: "#059669", accentColor: "#F97316",
+    headerGradient: "linear-gradient(135deg, #059669 0%, #10B981 55%, #34D399 100%)",
+    bgColor: "#F6FDF9", shellBg: "#DCEFE1",
+    tintBg: "#E6F9EF", tintBorder: "#9FE6BE",
     menuLabel: "Sierra Club",
     menuDesc: "Sierra Club\'s impact and campaigns",
     tabs: { delivered: "What we\'ve won", inProgress: "Fights in progress", involved: "Get involved" },
-    categories: [
-      { id: "env_health", label: "Environmental Health", color: "#2D7A4F", bg: "#EEF7F2", border: "#B8D8C4" },
-      { id: "climate",    label: "Climate & Energy",     color: "#D47A2A", bg: "#FEF3E6", border: "#F0C080" },
-      { id: "land",       label: "Land & Green Space",   color: "#5A8A6A", bg: "#F4FAF6", border: "#C8DDD0" },
-      { id: "justice",    label: "Community & Justice",  color: "#7A6A4A", bg: "#FAF8F0", border: "#E0D8C0" },
-    ],
+    categories: CATEGORIES,
   },
 };
 
 const CContext = createContext({});
 const SkinContext = createContext({});
 function makeC(s) {
-  return { bg: s.bgColor, white: "#FFFFFF", forest: "#1A3D2B", green: s.primaryColor,
-    greenLight: "#EEF7F2", border: "#E0DDD5", borderGreen: "#B8D8C4",
-    textMid: "#4A6355", textLight: "#8A9E92", amber: s.accentColor };
+  return { bg: s.bgColor, white: "#FFFFFF", forest: "#1E1B2E", green: s.primaryColor,
+    headerGradient: s.headerGradient,
+    greenLight: s.tintBg, borderGreen: s.tintBorder, border: "#E7E5EF",
+    textMid: "#55535F", textLight: "#93909E", amber: s.accentColor };
 }
 
 const ORGS = {
@@ -1276,9 +1280,9 @@ const TABS = [
   { id:"involved",   tense:"action"  },
 ];
 const TAB_COLORS = {
-  delivered:  { dot:"#2D7A4F", active:"#2D7A4F", activeBg:"#EEF7F2", border:"#B8D8C4" },
-  inProgress: { dot:"#D47A2A", active:"#D47A2A", activeBg:"#FEF3E6", border:"#F0C080" },
-  involved:   { dot:"#4A6355", active:"#4A6355", activeBg:"#F0EBE0", border:"#D8D0C4" },
+  delivered:  { dot:"#16A34A", active:"#16A34A", activeBg:"#DCFCE7", border:"#86EFAC" },
+  inProgress: { dot:"#F59E0B", active:"#F59E0B", activeBg:"#FEF3C7", border:"#FCD34D" },
+  involved:   { dot:"#6366F1", active:"#6366F1", activeBg:"#E0E7FF", border:"#A5B4FC" },
 };
 const STORY_LABELS = {
   past:    ["The issue","Why it mattered","What was done","What happened"],
@@ -1346,7 +1350,7 @@ function OrgSheet({ orgId, onClose }) {
             <div style={{ fontSize:13, color:C.textMid, lineHeight:1.7 }}>{text}</div>
           </div>
         ))}
-        <a href={org.link} target="_blank" rel="noopener noreferrer" style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, width:"100%", padding:13, borderRadius:12, background:C.green, color:C.white, fontSize:14, fontWeight:700, textDecoration:"none" }}>
+        <a href={org.link} target="_blank" rel="noopener noreferrer" style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, width:"100%", padding:14, borderRadius:14, background:C.green, color:C.white, fontSize:14.5, fontWeight:700, textDecoration:"none", boxShadow:`0 6px 16px ${C.green}55` }}>
           Visit {org.name} ↗
         </a>
         <div onClick={onClose} style={{ textAlign:"center", marginTop:14, fontSize:13, color:C.textLight, cursor:"pointer" }}>Close</div>
@@ -1359,58 +1363,59 @@ function StoryCard({ item, tense, tabId, onOrgClick, defaultOpen }) {
   const C = useContext(CContext);
   const [open, setOpen] = useState(!!defaultOpen);
   const tc = TAB_COLORS[tabId];
+  const cat = CATEGORIES.find(c => c.id === item.category) || { color: tc.active };
   const isAction = tense === "action";
   const labels = STORY_LABELS[tense];
   const storyFields = isAction ? [] : [item.issue, item.why, item.done, item.outcome];
   const org = ORGS[item.orgId];
   return (
-    <div style={{ marginBottom:10 }}>
-      <div onClick={() => setOpen(!open)} style={{ display:"flex", gap:10, alignItems:"flex-start", cursor:"pointer" }}>
-        <div style={{ flexShrink:0, marginTop:7, width:7, height:7, borderRadius:"50%", background:tc.dot }} />
-        <div style={{ flex:1, fontSize:14, lineHeight:1.65, color:C.forest, background:C.white, border:`1px solid ${open ? tc.dot : C.border}`, borderRadius:12, padding:"11px 14px" }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8 }}>
-            <span style={{ flex:1 }}>{item.summary}</span>
-            <span style={{ color:C.textLight, fontSize:14, flexShrink:0, marginTop:2, transform:open ? "rotate(180deg)" : "none", transition:"transform 0.2s" }}>▾</span>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:9, gap:8, flexWrap:"wrap" }}>
-            {org && (
-              <div onClick={e => { e.stopPropagation(); onOrgClick(item.orgId); }}
-                style={{ display:"inline-flex", alignItems:"center", gap:5, background:C.greenLight, border:`1px solid ${C.borderGreen}`, borderRadius:20, padding:"3px 10px 3px 6px", cursor:"pointer" }}
-                onMouseEnter={e => e.currentTarget.style.background="#D4EDE0"}
-                onMouseLeave={e => e.currentTarget.style.background=C.greenLight}>
-                <span style={{ fontSize:13 }}>{org.emoji}</span>
-                <span style={{ fontSize:11, fontWeight:700, color:C.green }}>{org.name}</span>
-                <span style={{ fontSize:10, color:C.textLight }}>ⓘ</span>
-              </div>
-            )}
-            {item.bulletLink && (
-              <a href={item.bulletLink} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                style={{ display:"inline-flex", alignItems:"center", gap:3, fontSize:12, fontWeight:700, color:tc.active, textDecoration:"none", borderBottom:`1px solid ${tc.border}`, paddingBottom:1 }}>
-                ↗ {item.bulletLinkLabel}
-              </a>
-            )}
-          </div>
+    <div style={{ marginBottom:12 }}>
+      <div onClick={() => setOpen(!open)}
+        style={{ cursor:"pointer", background:C.white, borderRadius:16, borderLeft:`5px solid ${cat.color}`,
+          boxShadow: open ? `0 6px 16px ${cat.color}30` : "0 1px 3px rgba(30,20,50,0.07)",
+          padding:"14px 14px 14px 13px", transition:"box-shadow 0.15s" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10 }}>
+          <span style={{ flex:1, fontSize:15, fontWeight:650, lineHeight:1.5, color:C.forest }}>{item.summary}</span>
+          <span style={{ color:cat.color, fontSize:15, flexShrink:0, marginTop:2, transform:open ? "rotate(180deg)" : "none", transition:"transform 0.2s" }}>▾</span>
+        </div>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:10, gap:8, flexWrap:"wrap" }}>
+          {org && (
+            <div onClick={e => { e.stopPropagation(); onOrgClick(item.orgId); }}
+              style={{ display:"inline-flex", alignItems:"center", gap:5, background:C.greenLight, border:`1px solid ${C.borderGreen}`, borderRadius:20, padding:"3px 10px 3px 6px", cursor:"pointer" }}
+              onMouseEnter={e => e.currentTarget.style.filter="brightness(0.97)"}
+              onMouseLeave={e => e.currentTarget.style.filter="none"}>
+              <span style={{ fontSize:13 }}>{org.emoji}</span>
+              <span style={{ fontSize:11, fontWeight:700, color:C.green }}>{org.name}</span>
+              <span style={{ fontSize:10, color:C.textLight }}>ⓘ</span>
+            </div>
+          )}
+          {item.bulletLink && (
+            <a href={item.bulletLink} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+              style={{ display:"inline-flex", alignItems:"center", gap:3, fontSize:12, fontWeight:700, color:tc.active, textDecoration:"none", borderBottom:`1px solid ${tc.border}`, paddingBottom:1 }}>
+              ↗ {item.bulletLinkLabel}
+            </a>
+          )}
         </div>
       </div>
       {open && !isAction && (
-        <div style={{ marginLeft:17, marginTop:6, background:C.white, border:`1px solid ${C.border}`, borderLeft:`3px solid ${tc.dot}`, borderRadius:"0 12px 12px 0", padding:16, fontSize:13, lineHeight:1.75, color:C.textMid }}>
+        <div style={{ marginTop:6, background:C.white, borderLeft:`5px solid ${cat.color}`, borderRadius:16, padding:16, fontSize:13.5, lineHeight:1.75, color:C.textMid, boxShadow:"0 1px 3px rgba(30,20,50,0.06)" }}>
           {storyFields.map((text, i) => (
             <div key={i} style={{ marginBottom:i < 3 ? 14 : 0 }}>
-              <div style={{ fontSize:10, fontWeight:700, color:tc.active, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:4 }}>{labels[i]}</div>
+              <div style={{ fontSize:10, fontWeight:800, color:cat.color, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:4 }}>{labels[i]}</div>
               <div>{text}</div>
             </div>
           ))}
         </div>
       )}
       {open && isAction && (
-        <div style={{ marginLeft:17, marginTop:6, background:C.white, border:`1px solid ${C.border}`, borderLeft:`3px solid ${tc.dot}`, borderRadius:"0 12px 12px 0", padding:16 }}>
+        <div style={{ marginTop:6, background:C.white, borderLeft:`5px solid ${cat.color}`, borderRadius:16, padding:16, boxShadow:"0 1px 3px rgba(30,20,50,0.06)" }}>
           {item.steps.map((step, i) => (
             <div key={i} style={{ display:"flex", gap:10, marginBottom:10, alignItems:"flex-start" }}>
-              <div style={{ flexShrink:0, width:20, height:20, borderRadius:"50%", background:C.greenLight, border:`1px solid ${C.borderGreen}`, fontSize:11, fontWeight:700, color:C.green, display:"flex", alignItems:"center", justifyContent:"center" }}>{i+1}</div>
-              <div style={{ fontSize:13, lineHeight:1.7, color:C.textMid, paddingTop:1 }}>{step}</div>
+              <div style={{ flexShrink:0, width:22, height:22, borderRadius:"50%", background:cat.color, fontSize:11, fontWeight:700, color:"#fff", display:"flex", alignItems:"center", justifyContent:"center" }}>{i+1}</div>
+              <div style={{ fontSize:13, lineHeight:1.7, color:C.textMid, paddingTop:2 }}>{step}</div>
             </div>
           ))}
-          {item.link && <a href={item.link} target="_blank" rel="noopener noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:4, marginTop:6, fontSize:13, fontWeight:700, color:C.green, textDecoration:"none", borderBottom:`1px solid ${C.borderGreen}`, paddingBottom:1 }}>↗ {item.linkLabel}</a>}
+          {item.link && <a href={item.link} target="_blank" rel="noopener noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:4, marginTop:6, fontSize:13, fontWeight:700, color:cat.color, textDecoration:"none", borderBottom:`1px solid ${cat.border || C.borderGreen}`, paddingBottom:1 }}>↗ {item.linkLabel}</a>}
         </div>
       )}
     </div>
@@ -1430,10 +1435,10 @@ function CategoryGroupedList({ items, tense, tabId, interests, onOrgClick, openS
         if (catItems.length === 0) return null;
         return (
           <div key={cat.id}>
-            {ci > 0 && <div style={{ height:1, background:C.border, margin:"18px 0 14px" }} />}
+            {ci > 0 && <div style={{ height:14 }} />}
             <div style={{ marginBottom:12 }}>
-              <span style={{ fontSize:10, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:cat.color, background:cat.bg, border:`1px solid ${cat.border}`, padding:"3px 10px", borderRadius:20 }}>
-                {cat.label}
+              <span style={{ display:"inline-flex", alignItems:"center", gap:6, fontSize:11, fontWeight:800, letterSpacing:"0.03em", color:"#fff", background:cat.color, padding:"5px 12px 5px 8px", borderRadius:20, boxShadow:`0 2px 6px ${cat.color}55` }}>
+                <span style={{ fontSize:13 }}>{cat.icon}</span>{cat.label}
               </span>
             </div>
             {catItems.map((item, i) => {
@@ -1470,9 +1475,9 @@ function InterestsPanel({ interests, onUpdate, onClose }) {
         {skin.categories.map(cat => {
           const sel = cats.includes(cat.id);
           return (
-            <div key={cat.id} onClick={() => toggleCat(cat.id)} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:sel ? cat.bg : C.white, border:`1.5px solid ${sel ? cat.color : C.border}`, borderRadius:12, padding:"13px 16px", marginBottom:8, cursor:"pointer" }}>
-              <div style={{ fontSize:14, fontWeight:600, color:C.forest }}>{cat.label}</div>
-              <div style={{ width:22, height:22, borderRadius:6, background:sel ? cat.color : C.bg, border:`1.5px solid ${sel ? cat.color : C.border}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, color:"#fff" }}>{sel ? "✓" : ""}</div>
+            <div key={cat.id} onClick={() => toggleCat(cat.id)} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:cat.bg, border:`1.5px solid ${sel ? cat.color : cat.border}`, borderRadius:14, padding:"13px 16px", marginBottom:8, cursor:"pointer", boxShadow:sel ? `0 4px 10px ${cat.color}40` : "none" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8, fontSize:14, fontWeight:700, color:cat.color }}><span style={{ fontSize:15 }}>{cat.icon}</span>{cat.label}</div>
+              <div style={{ width:22, height:22, borderRadius:7, background:sel ? cat.color : "#fff", border:`1.5px solid ${cat.color}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, color:"#fff" }}>{sel ? "✓" : ""}</div>
             </div>
           );
         })}
@@ -1551,8 +1556,8 @@ function SkinMenu({ activeSkinId, onSelect, onClose }) {
         {Object.values(SKINS).map(s => {
           const active = s.id === activeSkinId;
           return (
-            <div key={s.id} onClick={() => { onSelect(s.id); onClose(); }} style={{ display:"flex", alignItems:"center", gap:14, background:active ? s.bgColor : "#F7F5F0", border:`1.5px solid ${active ? s.primaryColor : "#E0DDD5"}`, borderRadius:14, padding:"14px 16px", marginBottom:10, cursor:"pointer" }}>
-              <div style={{ width:40, height:40, borderRadius:10, background:s.primaryColor, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0 }}>{s.logo}</div>
+            <div key={s.id} onClick={() => { onSelect(s.id); onClose(); }} style={{ display:"flex", alignItems:"center", gap:14, background:active ? s.tintBg : "#F7F5F0", border:`1.5px solid ${active ? s.primaryColor : "#E7E5EF"}`, borderRadius:16, padding:"14px 16px", marginBottom:10, cursor:"pointer" }}>
+              <div style={{ width:44, height:44, borderRadius:12, background:s.headerGradient, display:"flex", alignItems:"center", justifyContent:"center", fontSize:21, flexShrink:0, boxShadow:`0 4px 10px ${s.primaryColor}55` }}>{s.logo}</div>
               <div style={{ flex:1 }}>
                 <div style={{ fontSize:14, fontWeight:700, color:"#1A3D2B", marginBottom:2 }}>{s.menuLabel}</div>
                 <div style={{ fontSize:12, color:"#8A9E92" }}>{s.menuDesc}</div>
@@ -1634,63 +1639,66 @@ export default function App() {
 
       <div style={{ width:375, height:812, background:C.bg, borderRadius:52, flexShrink:0, boxShadow:"0 0 0 2px #C8C4BC, 0 0 0 4px #B0ACA4, 0 40px 80px rgba(0,0,0,0.2), inset 0 0 0 1px rgba(255,255,255,0.7)", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column" }}>
 
-        <div style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)", width:120, height:30, background:"#111", borderRadius:"0 0 20px 20px", zIndex:100 }} />
+        <div style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)", width:120, height:30, background:"rgba(0,0,0,0.28)", borderRadius:"0 0 20px 20px", zIndex:100 }} />
 
-        <div style={{ height:44, display:"flex", alignItems:"flex-end", justifyContent:"space-between", padding:"0 24px 6px", flexShrink:0 }}>
-          <span style={{ fontSize:15, fontWeight:700, color:C.forest }}>{new Date().toLocaleTimeString([],{ hour:"2-digit", minute:"2-digit" })}</span>
-          <span style={{ fontSize:11, color:C.textLight }}>●●●● WiFi 87%</span>
-        </div>
-
-        <div style={{ padding:"8px 20px 12px", flexShrink:0, borderBottom:`1px solid ${C.border}` }}>
-          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:8 }}>
-            <div>
-              <div style={{ fontFamily:"Fraunces, serif", fontSize:19, fontWeight:900, color:C.forest, letterSpacing:"-0.02em", marginBottom:2 }}>
-                {skin.logo} {skin.appName}
-              </div>
-              <div style={{ fontSize:11, color:C.textLight }}>{skin.tagline}</div>
-            </div>
-            <div style={{ display:"flex", gap:6, flexShrink:0 }}>
-              <div onClick={() => setShowMenu(true)} style={{ background:"#111", borderRadius:10, padding:"7px 10px", display:"flex", alignItems:"center", gap:4, cursor:"pointer", boxShadow:"0 2px 8px rgba(0,0,0,0.15)" }}>
-                <span style={{ fontSize:14 }}>{skin.logo}</span>
-                <span style={{ fontSize:11, fontWeight:700, color:"#fff" }}>View</span>
-              </div>
-              <div onClick={() => setShowInterests(true)} style={{ background:hasPrefs ? C.green : "#111", borderRadius:10, padding:"7px 10px", display:"flex", alignItems:"center", gap:4, cursor:"pointer", boxShadow:"0 2px 8px rgba(0,0,0,0.15)" }}>
-                <span style={{ fontSize:12 }}>⚙️</span>
-                <span style={{ fontSize:11, fontWeight:700, color:"#fff" }}>{hasPrefs ? "Filtered" : "Interests"}</span>
-              </div>
-              <div onClick={() => setSearching(true)} style={{ background:"#111", borderRadius:10, padding:"7px 10px", display:"flex", alignItems:"center", gap:4, cursor:"pointer", boxShadow:"0 2px 8px rgba(0,0,0,0.15)" }}>
-                <span style={{ fontSize:12 }}>🔍</span>
-                <span style={{ fontSize:11, fontWeight:700, color:"#fff" }}>Search</span>
-              </div>
-            </div>
+        <div style={{ background:C.headerGradient, flexShrink:0, borderRadius:"0 0 26px 26px", paddingBottom:18, boxShadow:"0 4px 20px rgba(0,0,0,0.12)" }}>
+          <div style={{ height:44, display:"flex", alignItems:"flex-end", justifyContent:"space-between", padding:"0 24px 6px" }}>
+            <span style={{ fontSize:15, fontWeight:700, color:"#fff" }}>{new Date().toLocaleTimeString([],{ hour:"2-digit", minute:"2-digit" })}</span>
+            <span style={{ fontSize:11, color:"rgba(255,255,255,0.85)" }}>●●●● WiFi 87%</span>
           </div>
-          <div onClick={locateMe} title="Tap to use your current location" style={{ marginTop:10, display:"flex", alignItems:"baseline", flexWrap:"wrap", gap:"2px 6px", cursor:"pointer" }}>
-            <span style={{ fontSize:12, color:geo.status === "locating" ? C.textLight : C.green, alignSelf:"center" }}>📍</span>
-            <span style={{ fontSize:13, fontWeight:700, color:C.forest }}>{locationLabel}</span>
-            {locationSub && <span style={{ fontSize:11, color:C.textLight }}>{locationSub}</span>}
-            {distanceLabel && <span style={{ fontSize:11, color:C.textLight }}>· {distanceLabel}</span>}
-            {(geo.status === "denied" || geo.status === "unsupported") && <span style={{ fontSize:11, color:C.textLight }}>· enable ⟳</span>}
-            {(geo.status === "manual" || geo.status === "sensed") && <span style={{ fontSize:11, color:C.textLight }}>· retry ⟳</span>}
+
+          <div style={{ padding:"6px 20px 0" }}>
+            <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:8 }}>
+              <div>
+                <div style={{ fontFamily:"Fraunces, serif", fontSize:20, fontWeight:900, color:"#fff", letterSpacing:"-0.02em", marginBottom:2 }}>
+                  {skin.logo} {skin.appName}
+                </div>
+                <div style={{ fontSize:11, color:"rgba(255,255,255,0.82)" }}>{skin.tagline}</div>
+              </div>
+              <div style={{ display:"flex", gap:6, flexShrink:0 }}>
+                <div onClick={() => setShowMenu(true)} style={{ background:"rgba(255,255,255,0.22)", backdropFilter:"blur(6px)", border:"1px solid rgba(255,255,255,0.35)", borderRadius:10, padding:"7px 10px", display:"flex", alignItems:"center", gap:4, cursor:"pointer" }}>
+                  <span style={{ fontSize:14 }}>{skin.logo}</span>
+                  <span style={{ fontSize:11, fontWeight:700, color:"#fff" }}>View</span>
+                </div>
+                <div onClick={() => setShowInterests(true)} style={{ background:hasPrefs ? "#fff" : "rgba(255,255,255,0.22)", backdropFilter:"blur(6px)", border:"1px solid rgba(255,255,255,0.35)", borderRadius:10, padding:"7px 10px", display:"flex", alignItems:"center", gap:4, cursor:"pointer" }}>
+                  <span style={{ fontSize:12 }}>⚙️</span>
+                  <span style={{ fontSize:11, fontWeight:700, color:hasPrefs ? C.green : "#fff" }}>{hasPrefs ? "Filtered" : "Interests"}</span>
+                </div>
+                <div onClick={() => setSearching(true)} style={{ background:"rgba(255,255,255,0.22)", backdropFilter:"blur(6px)", border:"1px solid rgba(255,255,255,0.35)", borderRadius:10, padding:"7px 10px", display:"flex", alignItems:"center", gap:4, cursor:"pointer" }}>
+                  <span style={{ fontSize:12 }}>🔍</span>
+                  <span style={{ fontSize:11, fontWeight:700, color:"#fff" }}>Search</span>
+                </div>
+              </div>
+            </div>
+            <div onClick={locateMe} title="Tap to use your current location" style={{ marginTop:10, display:"flex", alignItems:"baseline", flexWrap:"wrap", gap:"2px 6px", cursor:"pointer" }}>
+              <span style={{ fontSize:12, color:"#fff", alignSelf:"center", opacity:geo.status === "locating" ? 0.6 : 1 }}>📍</span>
+              <span style={{ fontSize:13, fontWeight:700, color:"#fff" }}>{locationLabel}</span>
+              {locationSub && <span style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>{locationSub}</span>}
+              {distanceLabel && <span style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>· {distanceLabel}</span>}
+              {(geo.status === "denied" || geo.status === "unsupported") && <span style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>· enable ⟳</span>}
+              {(geo.status === "manual" || geo.status === "sensed") && <span style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>· retry ⟳</span>}
+            </div>
           </div>
         </div>
 
         {headline && geo.status !== "locating" && (
           <div onClick={() => { setActiveTab(headline.tabId); setOpenSummary(headline.item.summary); }}
-            style={{ margin:"12px 20px 0", background:C.greenLight, border:`1px solid ${C.borderGreen}`, borderRadius:14, padding:"12px 14px", cursor:"pointer", flexShrink:0 }}>
-            <div style={{ fontSize:10, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:C.green, marginBottom:6 }}>
-              📍 {headlineEyebrow}
+            style={{ margin:"-14px 20px 0", background:C.amber, borderRadius:16, padding:"13px 15px", cursor:"pointer", flexShrink:0, boxShadow:`0 8px 20px ${C.amber}55`, position:"relative", zIndex:2 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}>
+              <span style={{ fontSize:13, background:"rgba(255,255,255,0.3)", borderRadius:999, width:20, height:20, display:"inline-flex", alignItems:"center", justifyContent:"center" }}>📍</span>
+              <span style={{ fontSize:10, fontWeight:800, letterSpacing:"0.08em", textTransform:"uppercase", color:"#fff" }}>{headlineEyebrow}</span>
             </div>
-            <div style={{ fontSize:14, fontWeight:700, color:C.forest, lineHeight:1.4 }}>{headline.item.summary}</div>
-            <div style={{ marginTop:6, fontSize:11, color:C.textMid }}>Tap to read the full story →</div>
+            <div style={{ fontSize:14.5, fontWeight:700, color:"#fff", lineHeight:1.4 }}>{headline.item.summary}</div>
+            <div style={{ marginTop:6, fontSize:11, color:"rgba(255,255,255,0.9)", fontWeight:600 }}>Tap to read the full story →</div>
           </div>
         )}
 
-        <div style={{ display:"flex", flexShrink:0, marginTop:12, borderBottom:`1px solid ${C.border}`, background:C.bg }}>
+        <div style={{ display:"flex", flexShrink:0, margin:"14px 20px 0", background:C.greenLight, borderRadius:999, padding:4, gap:4 }}>
           {TABS.map(t => {
             const tc = TAB_COLORS[t.id];
             const isActive = activeTab === t.id;
             return (
-              <div key={t.id} onClick={() => setActiveTab(t.id)} style={{ flex:1, textAlign:"center", padding:"10px 4px", fontSize:11, fontWeight:700, color:isActive ? tc.active : C.textLight, background:isActive ? tc.activeBg : "transparent", borderBottom:isActive ? `2px solid ${tc.active}` : "2px solid transparent", cursor:"pointer", lineHeight:1.3 }}>
+              <div key={t.id} onClick={() => setActiveTab(t.id)} style={{ flex:1, textAlign:"center", padding:"8px 4px", fontSize:11, fontWeight:800, borderRadius:999, color:isActive ? "#fff" : C.textMid, background:isActive ? tc.active : "transparent", boxShadow:isActive ? `0 3px 8px ${tc.active}66` : "none", cursor:"pointer", lineHeight:1.3, transition:"background 0.15s" }}>
                 {skin.tabs[t.id]}
               </div>
             );
