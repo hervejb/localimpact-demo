@@ -1371,9 +1371,41 @@ function matchLocationQuery(text) {
   return bestZip;
 }
 
-function OrgSheet({ orgId, onClose }) {
+// Calls the /api/search serverless function — the live "ask anything
+// anywhere" path. It's grounded with real web search and never throws:
+// a missing API key, a network error, or a bad response all resolve to an
+// empty result, so the caller can always just await it and merge in
+// whatever came back, exactly like the local-only matches.
+async function searchLive(topic, locationLabel, zip) {
+  const empty = { delivered: [], inProgress: [] };
+  try {
+    const res = await fetch("/api/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ topic, locationLabel, zip }),
+    });
+    if (!res.ok) return empty;
+    const data = await res.json();
+    const items = Array.isArray(data.items) ? data.items : [];
+    const toLiveItem = i => ({
+      summary: i.summary, issue: i.issue, why: i.why, done: i.done, outcome: i.outcome,
+      category: i.category, org: i.org, bulletLink: i.bulletLink, bulletLinkLabel: i.bulletLinkLabel,
+      live: true,
+    });
+    return {
+      delivered: items.filter(i => i.tense === "past").map(toLiveItem),
+      inProgress: items.filter(i => i.tense === "present").map(toLiveItem),
+    };
+  } catch {
+    return empty;
+  }
+}
+
+// `org` is either a curated org id (string, looked up in ORGS) or a full
+// org object returned inline by a live search result.
+function OrgSheet({ org: orgRef, onClose }) {
   const C = useContext(CContext);
-  const org = ORGS[orgId];
+  const org = typeof orgRef === "string" ? ORGS[orgRef] : orgRef;
   if (!org) return null;
   return (
     <div onClick={onClose} style={{ position:"absolute", inset:0, zIndex:400, background:"rgba(0,0,0,0.4)", display:"flex", flexDirection:"column", justifyContent:"flex-end" }}>
@@ -1408,7 +1440,9 @@ function StoryCard({ item, tense, tabId, onOrgClick }) {
   const isAction = Array.isArray(item.steps);
   const labels = STORY_LABELS[tense];
   const storyFields = isAction ? [] : [item.issue, item.why, item.done, item.outcome];
-  const org = ORGS[item.orgId];
+  // Curated items reference an org by id (looked up in ORGS); live-searched
+  // items carry the full org profile inline since they aren't in ORGS.
+  const org = item.org || ORGS[item.orgId];
   return (
     <div style={{ marginBottom:12 }}>
       <div onClick={() => setOpen(!open)}
@@ -1419,9 +1453,12 @@ function StoryCard({ item, tense, tabId, onOrgClick }) {
           <span style={{ flex:1, fontSize:15, fontWeight:650, lineHeight:1.5, color:C.forest }}>{item.summary}</span>
           <span style={{ color:cat.color, fontSize:17, fontWeight:700, flexShrink:0, width:20, textAlign:"center", lineHeight:1 }}>{open ? "−" : "+"}</span>
         </div>
+        {item.live && (
+          <div style={{ fontSize:10, fontWeight:700, color:C.textLight, marginTop:6 }}>🔎 Found via live search — verify before relying on this</div>
+        )}
         {org && (
-          <div onClick={e => { e.stopPropagation(); onOrgClick(item.orgId); }}
-            style={{ display:"flex", alignItems:"center", gap:7, marginTop:10, cursor:"pointer" }}>
+          <div onClick={e => { e.stopPropagation(); onOrgClick(item.org || item.orgId); }}
+            style={{ display:"flex", alignItems:"center", gap:7, marginTop:8, cursor:"pointer" }}>
             <span style={{ fontSize:14 }}>{org.emoji}</span>
             <span style={{ fontSize:12.5, fontWeight:700, color:C.green }}>{org.name}</span>
             <span style={{ fontSize:11, color:C.textLight, marginLeft:"auto" }}>→</span>
@@ -1630,6 +1667,7 @@ export default function App() {
   const [interests, setInterests]         = useState({ query:"", categories:[], orgs:[] });
   const [geo, setGeo]                     = useState({ status:"locating", distanceMiles:null });
   const [interstitial, setInterstitial]   = useState(false);
+  const [liveResults, setLiveResults]     = useState({ delivered:[], inProgress:[] });
 
   const skin = SKINS[skinId];
   const C    = makeC(skin);
@@ -1645,6 +1683,7 @@ export default function App() {
         setZip(nearest.zip);
         setLocData(LOCATION_DATA[nearest.zip]);
         setActiveTab("delivered");
+        setLiveResults({ delivered:[], inProgress:[] });
         setGeo({ status:"sensed", distanceMiles:nearest.distanceMiles });
       },
       () => setGeo({ status:"denied", distanceMiles:null }),
@@ -1654,13 +1693,28 @@ export default function App() {
 
   useEffect(() => { locateMe(); }, []);
 
-  const handleSelect       = z  => { setZip(z); setLocData(LOCATION_DATA[z]); setActiveTab("delivered"); setGeo({ status:"manual", distanceMiles:null }); };
+  const handleSelect       = z  => { setZip(z); setLocData(LOCATION_DATA[z]); setActiveTab("delivered"); setLiveResults({ delivered:[], inProgress:[] }); setGeo({ status:"manual", distanceMiles:null }); };
 
-  const handleSavePreferences = updated => {
+  // Static matching (matchInterests, already run inside PreferencesPanel)
+  // covers the hand-authored dataset instantly and for free. Saving also
+  // kicks off a live, web-search-grounded lookup for the same topic at the
+  // current location — this is the "ask anything anywhere" path: it's what
+  // makes a topic outside the curated categories (e.g. "racial justice"
+  // somewhere with no curated coverage) return something instead of
+  // silently nothing. searchLive never throws, so there's no error state to
+  // show — a save with no live results just shows whatever was already
+  // there.
+  const handleSavePreferences = async updated => {
     setInterests(updated);
     setShowPreferences(false);
+    if (!updated.query || !updated.query.trim()) {
+      setLiveResults({ delivered:[], inProgress:[] });
+      return;
+    }
     setInterstitial(true);
-    setTimeout(() => setInterstitial(false), 1300);
+    const live = await searchLive(updated.query, locData.location, zip);
+    setLiveResults(live);
+    setInterstitial(false);
   };
 
   const tab                 = TABS.find(t => t.id === activeTab);
@@ -1668,9 +1722,10 @@ export default function App() {
   // campaigns and the concrete ways to join one are both part of the same
   // ongoing fight, and splitting them into a third tab had silently made
   // every "involved"-only category (all of "justice") unreachable.
-  const items                = activeTab === "inProgress"
+  const staticItems          = activeTab === "inProgress"
                               ? [...(locData.inProgress || []), ...(locData.involved || [])]
                               : (locData[activeTab] || []);
+  const items                = [...staticItems, ...(liveResults[activeTab] || [])];
   const currentNeighborhood = NYC_LOCATIONS.find(l => l.zip === zip);
   const hasPrefs            = interests.categories.length > 0 || interests.orgs.length > 0;
 
@@ -1731,7 +1786,7 @@ export default function App() {
         </div>
 
         {searching       && <LocationModal     onSelectZip={handleSelect} onUseCurrentLocation={locateMe} onClose={() => setSearching(false)} />}
-        {activeOrg       && <OrgSheet          orgId={activeOrg} onClose={() => setActiveOrg(null)} />}
+        {activeOrg       && <OrgSheet          org={activeOrg} onClose={() => setActiveOrg(null)} />}
         {showPreferences && <PreferencesPanel  interests={interests} onSave={handleSavePreferences} onClose={() => setShowPreferences(false)} />}
         {interstitial    && <SearchInterstitial query={interests.query} />}
 
