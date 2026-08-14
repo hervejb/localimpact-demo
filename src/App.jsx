@@ -13,13 +13,13 @@ const SKINS = {
   civic: {
     id: "civic", appName: "LocalImpact", logo: "🏙️",
     tagline: "Who\'s been fighting for where you live",
-    primaryColor: "#4F46E5", accentColor: "#F59E0B",
-    headerGradient: "linear-gradient(135deg, #6366F1 0%, #8B5CF6 60%, #A855F7 100%)",
-    bgColor: "#FAFAFF", shellBg: "#E4E1F5",
-    tintBg: "#EEF0FF", tintBorder: "#C7D2FE",
+    primaryColor: "#0369A1", accentColor: "#F59E0B",
+    headerGradient: "linear-gradient(135deg, #0C4A6E 0%, #0284C7 55%, #22D3EE 100%)",
+    bgColor: "#F0F9FF", shellBg: "#D6ECF7",
+    tintBg: "#E0F2FE", tintBorder: "#7DD3FC",
     menuLabel: "General / Civic",
     menuDesc: "Everyone fighting for your neighborhood",
-    tabs: { delivered: "Won for you", inProgress: "Happening right now", involved: "Learn more & act" },
+    tabs: { delivered: "Won for you", inProgress: "Fighting for you" },
     categories: CATEGORIES,
   },
   sierra_club: {
@@ -1306,17 +1306,14 @@ const LOCATION_DATA = {
 const TABS = [
   { id:"delivered",  tense:"past"    },
   { id:"inProgress", tense:"present" },
-  { id:"involved",   tense:"action"  },
 ];
 const TAB_COLORS = {
-  delivered:  { dot:"#16A34A", active:"#16A34A", activeBg:"#DCFCE7", border:"#86EFAC" },
+  delivered:  { dot:"#0369A1", active:"#0369A1", activeBg:"#E0F2FE", border:"#7DD3FC" },
   inProgress: { dot:"#F59E0B", active:"#F59E0B", activeBg:"#FEF3C7", border:"#FCD34D" },
-  involved:   { dot:"#6366F1", active:"#6366F1", activeBg:"#E0E7FF", border:"#A5B4FC" },
 };
 const STORY_LABELS = {
   past:    ["The issue","Why it mattered","What was done","What happened"],
   present: ["The issue","Why it matters","What is being done","Where things stand"],
-  action:  [],
 };
 const NYC_LOCATIONS = [
   { zip:"10001", label:"Chelsea",                        sub:"Hell\'s Kitchen · Hudson Yards" },
@@ -1358,6 +1355,28 @@ function formatMiles(mi) {
   return `${Math.round(mi)} mi away`;
 }
 
+// Matches a typed/dictated location description — an address, city, zip,
+// or neighborhood name — against the covered locations. No geocoding API;
+// a direct zip hit wins outright, otherwise the entry whose name/zip/
+// neighborhood list shares the most words with the query wins.
+function matchLocationQuery(text) {
+  const q = text.toLowerCase().trim();
+  if (!q) return null;
+  if (LOCATION_DATA[q]) return q;
+  let bestZip = null, bestScore = 0;
+  for (const zip of Object.keys(LOCATION_DATA)) {
+    const entry = LOCATION_DATA[zip];
+    const haystack = [entry.location, ...(entry.neighborhoods || []), zip].join(" ").toLowerCase();
+    let score = haystack.includes(q) ? q.length + 5 : 0;
+    if (!score) {
+      const words = q.split(/[\s,]+/).filter(w => w.length > 2);
+      score = words.filter(w => haystack.includes(w)).length;
+    }
+    if (score > bestScore) { bestScore = score; bestZip = zip; }
+  }
+  return bestZip;
+}
+
 function OrgSheet({ orgId, onClose }) {
   const C = useContext(CContext);
   const org = ORGS[orgId];
@@ -1391,11 +1410,9 @@ function OrgSheet({ orgId, onClose }) {
 function StoryCard({ item, tense, tabId, onOrgClick }) {
   const C = useContext(CContext);
   const [open, setOpen] = useState(false);
-  const tc = TAB_COLORS[tabId];
-  const cat = CATEGORIES.find(c => c.id === item.category) || { color: tc.active };
-  const isAction = tense === "action";
+  const cat = CATEGORIES.find(c => c.id === item.category) || { color: TAB_COLORS[tabId].active };
   const labels = STORY_LABELS[tense];
-  const storyFields = isAction ? [] : [item.issue, item.why, item.done, item.outcome];
+  const storyFields = [item.issue, item.why, item.done, item.outcome];
   const org = ORGS[item.orgId];
   return (
     <div style={{ marginBottom:12 }}>
@@ -1407,26 +1424,16 @@ function StoryCard({ item, tense, tabId, onOrgClick }) {
           <span style={{ flex:1, fontSize:15, fontWeight:650, lineHeight:1.5, color:C.forest }}>{item.summary}</span>
           <span style={{ color:cat.color, fontSize:15, flexShrink:0, marginTop:2, transform:open ? "rotate(180deg)" : "none", transition:"transform 0.2s" }}>▾</span>
         </div>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:10, gap:8, flexWrap:"wrap" }}>
-          {org && (
-            <div onClick={e => { e.stopPropagation(); onOrgClick(item.orgId); }}
-              style={{ display:"inline-flex", alignItems:"center", gap:5, background:C.greenLight, border:`1px solid ${C.borderGreen}`, borderRadius:20, padding:"3px 10px 3px 6px", cursor:"pointer" }}
-              onMouseEnter={e => e.currentTarget.style.filter="brightness(0.97)"}
-              onMouseLeave={e => e.currentTarget.style.filter="none"}>
-              <span style={{ fontSize:13 }}>{org.emoji}</span>
-              <span style={{ fontSize:11, fontWeight:700, color:C.green }}>{org.name}</span>
-              <span style={{ fontSize:10, color:C.textLight }}>ⓘ</span>
-            </div>
-          )}
-          {item.bulletLink && (
-            <a href={item.bulletLink} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-              style={{ display:"inline-flex", alignItems:"center", gap:3, fontSize:12, fontWeight:700, color:tc.active, textDecoration:"none", borderBottom:`1px solid ${tc.border}`, paddingBottom:1 }}>
-              ↗ {item.bulletLinkLabel}
-            </a>
-          )}
-        </div>
+        {org && (
+          <div onClick={e => { e.stopPropagation(); onOrgClick(item.orgId); }}
+            style={{ display:"flex", alignItems:"center", gap:7, marginTop:10, cursor:"pointer" }}>
+            <span style={{ fontSize:14 }}>{org.emoji}</span>
+            <span style={{ fontSize:12.5, fontWeight:700, color:C.green }}>{org.name}</span>
+            <span style={{ fontSize:11, color:C.textLight, marginLeft:"auto" }}>→</span>
+          </div>
+        )}
       </div>
-      {open && !isAction && (
+      {open && (
         <div style={{ marginTop:6, background:C.white, borderLeft:`5px solid ${cat.color}`, borderRadius:16, padding:16, fontSize:13.5, lineHeight:1.75, color:C.textMid, boxShadow:"0 1px 3px rgba(30,20,50,0.06)" }}>
           {storyFields.map((text, i) => (
             <div key={i} style={{ marginBottom:i < 3 ? 14 : 0 }}>
@@ -1434,17 +1441,6 @@ function StoryCard({ item, tense, tabId, onOrgClick }) {
               <div>{text}</div>
             </div>
           ))}
-        </div>
-      )}
-      {open && isAction && (
-        <div style={{ marginTop:6, background:C.white, borderLeft:`5px solid ${cat.color}`, borderRadius:16, padding:16, boxShadow:"0 1px 3px rgba(30,20,50,0.06)" }}>
-          {item.steps.map((step, i) => (
-            <div key={i} style={{ display:"flex", gap:10, marginBottom:10, alignItems:"flex-start" }}>
-              <div style={{ flexShrink:0, width:22, height:22, borderRadius:"50%", background:cat.color, fontSize:11, fontWeight:700, color:"#fff", display:"flex", alignItems:"center", justifyContent:"center" }}>{i+1}</div>
-              <div style={{ fontSize:13, lineHeight:1.7, color:C.textMid, paddingTop:2 }}>{step}</div>
-            </div>
-          ))}
-          {item.link && <a href={item.link} target="_blank" rel="noopener noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:4, marginTop:6, fontSize:13, fontWeight:700, color:cat.color, textDecoration:"none", borderBottom:`1px solid ${cat.border || C.borderGreen}`, paddingBottom:1 }}>↗ {item.linkLabel}</a>}
         </div>
       )}
     </div>
@@ -1481,7 +1477,7 @@ function CategoryGroupedList({ items, tense, tabId, interests, onOrgClick }) {
 // One question, one box, one Save. Typing (or dictating) what someone cares
 // about gets matched to topics and orgs entirely behind the scenes on Save —
 // no live preview, no checklists. Saving applies it and returns to the feed.
-function PreferencesPanel({ interests, onInterestsChange, onClose }) {
+function PreferencesPanel({ interests, onSave, onClose }) {
   const C = useContext(CContext);
   const [query, setQuery]         = useState(interests.query || "");
   const [listening, setListening] = useState(false);
@@ -1506,8 +1502,7 @@ function PreferencesPanel({ interests, onInterestsChange, onClose }) {
 
   const save = () => {
     const matched = matchInterests(query);
-    onInterestsChange({ query, categories: matched.categories, orgs: matched.orgs });
-    onClose();
+    onSave({ query, categories: matched.categories, orgs: matched.orgs });
   };
 
   return (
@@ -1522,6 +1517,7 @@ function PreferencesPanel({ interests, onInterestsChange, onClose }) {
         <div style={{ position:"relative" }}>
           <textarea value={query} onChange={e => setQuery(e.target.value)} rows={7}
             placeholder="e.g. clean air, parks and trees near me, climate change, protecting local wildlife…"
+            spellCheck="true" autoCapitalize="sentences" autoCorrect="on"
             style={{ width:"100%", minHeight:190, border:`1.5px solid ${C.border}`, borderRadius:16, background:C.white, fontSize:15, lineHeight:1.6, color:C.forest, fontFamily:"Inter, sans-serif", padding:"16px 52px 16px 16px", resize:"vertical" }} />
           {speechSupported && (
             <div onClick={dictate} title="Dictate" style={{ position:"absolute", right:10, bottom:10, width:38, height:38, borderRadius:"50%", background:listening ? C.amber : C.greenLight, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", boxShadow:"0 2px 6px rgba(0,0,0,0.12)" }}>
@@ -1537,43 +1533,84 @@ function PreferencesPanel({ interests, onInterestsChange, onClose }) {
   );
 }
 
-function SearchModal({ currentZip, onSelect, onClose }) {
+// Replaces the old browsable neighborhood list: type or dictate a location
+// description (address, city, zip) and matchLocationQuery resolves it, or
+// fall back to re-sensing GPS via "Use my current location".
+function LocationModal({ onSelectZip, onUseCurrentLocation, onClose }) {
   const C = useContext(CContext);
-  const [query, setQuery] = useState("");
-  const visible = query.trim() ? NYC_LOCATIONS.filter(l => l.label.toLowerCase().includes(query.toLowerCase()) || l.sub.toLowerCase().includes(query.toLowerCase()) || l.zip.includes(query.trim())) : NYC_LOCATIONS;
-  const pick = zip => { onSelect(zip); onClose(); };
+  const [query, setQuery]         = useState("");
+  const [listening, setListening] = useState(false);
+  const [notFound, setNotFound]   = useState(false);
+  const speechSupported = typeof window !== "undefined" && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
+  const dictate = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR || listening) return;
+    const recognition = new SR();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = e => setQuery(e.results[0][0].transcript);
+    recognition.onerror = () => setListening(false);
+    recognition.onend = () => setListening(false);
+    setListening(true);
+    recognition.start();
+  };
+
+  const go = () => {
+    const zip = matchLocationQuery(query);
+    if (zip) { onSelectZip(zip); onClose(); }
+    else setNotFound(true);
+  };
+
   return (
     <div style={{ position:"absolute", inset:0, zIndex:300, background:C.bg, display:"flex", flexDirection:"column" }}>
-      <div style={{ padding:"52px 20px 16px", borderBottom:`1px solid ${C.border}`, flexShrink:0 }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
-          <div style={{ fontFamily:"Fraunces, serif", fontSize:18, fontWeight:700, color:C.forest }}>Choose a neighborhood</div>
-          <div onClick={onClose} style={{ fontSize:13, fontWeight:600, color:C.green, cursor:"pointer" }}>Cancel</div>
-        </div>
-        <div style={{ background:C.white, border:`1.5px solid ${C.border}`, borderRadius:12, display:"flex", alignItems:"center", padding:"3px 12px 3px 14px", gap:6 }}>
-          <span style={{ fontSize:13, color:C.textLight }}>🔍</span>
-          <input autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="Pick or enter location information…"
-            style={{ flex:1, border:"none", outline:"none", background:"transparent", fontSize:14, color:C.forest, fontFamily:"Inter, sans-serif", padding:"9px 4px" }} />
-          {query && <span onMouseDown={e => { e.preventDefault(); setQuery(""); }} style={{ fontSize:13, color:C.textLight, cursor:"pointer" }}>✕</span>}
-        </div>
+      <div style={{ padding:"52px 20px 16px", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ fontFamily:"Fraunces, serif", fontSize:18, fontWeight:700, color:C.forest }}>Change location</div>
+        <div onClick={onClose} style={{ width:30, height:30, borderRadius:"50%", background:C.greenLight, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:13, color:C.textMid }}>✕</div>
       </div>
-      <div style={{ flex:1, overflowY:"auto", padding:"12px 20px 32px" }}>
-        <div style={{ fontSize:11, fontWeight:700, color:C.textLight, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:12 }}>{query.trim() ? "Matching locations" : "Nearby locations"}</div>
-        {visible.map(loc => {
-          const active = loc.zip === currentZip;
-          return (
-            <div key={loc.zip} onClick={() => pick(loc.zip)} style={{ background:active ? C.greenLight : C.white, border:`1.5px solid ${active ? C.green : C.border}`, borderRadius:12, padding:"13px 16px", cursor:"pointer", marginBottom:8, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 }}
-              onMouseEnter={e => { if (!active) e.currentTarget.style.borderColor = C.green; }}
-              onMouseLeave={e => { if (!active) e.currentTarget.style.borderColor = C.border; }}>
-              <div>
-                <div style={{ fontSize:14, fontWeight:600, color:C.forest }}>{loc.label}</div>
-                <div style={{ fontSize:11, color:C.textLight, marginTop:2 }}>{loc.sub}</div>
-              </div>
-              {active ? <span style={{ color:C.green, fontSize:16 }}>✓</span> : <span style={{ color:C.textLight, fontSize:14 }}>→</span>}
+      <div style={{ flex:1, padding:"4px 20px 20px" }}>
+        <div style={{ fontSize:12, color:C.textLight, marginBottom:14 }}>Type or say an address, city, or zip code.</div>
+        <div style={{ display:"flex", alignItems:"center", gap:8, background:C.white, border:`1.5px solid ${C.border}`, borderRadius:14, padding:"4px 6px 4px 14px" }}>
+          <input autoFocus value={query} onChange={e => { setQuery(e.target.value); setNotFound(false); }} onKeyDown={e => e.key === "Enter" && go()}
+            placeholder="e.g. Miami Beach, 10025, Hyde Park…" spellCheck="true" autoCapitalize="words"
+            style={{ flex:1, minWidth:0, border:"none", outline:"none", background:"transparent", fontSize:14, color:C.forest, fontFamily:"Inter, sans-serif", padding:"10px 0" }} />
+          {speechSupported && (
+            <div onClick={dictate} title="Dictate" style={{ width:34, height:34, borderRadius:"50%", flexShrink:0, background:listening ? C.amber : C.greenLight, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+              <span style={{ fontSize:14 }}>{listening ? "●" : "🎙️"}</span>
             </div>
-          );
-        })}
-        {visible.length === 0 && <div style={{ fontSize:13, color:C.textLight, textAlign:"center", marginTop:24 }}>No neighborhoods match "{query}"</div>}
+          )}
+        </div>
+        {notFound && <div style={{ marginTop:10, fontSize:12.5, color:C.amber }}>Couldn't match that to a covered location — try a zip code or city name.</div>}
+
+        <div onClick={go} style={{ marginTop:14, background:C.green, borderRadius:14, padding:14, textAlign:"center", fontSize:15, fontWeight:700, color:"#fff", cursor:"pointer", boxShadow:`0 6px 16px ${C.green}55` }}>Find</div>
+
+        <div style={{ display:"flex", alignItems:"center", gap:10, margin:"22px 0" }}>
+          <div style={{ flex:1, height:1, background:C.border }} />
+          <span style={{ fontSize:11, color:C.textLight, fontWeight:700, letterSpacing:"0.05em" }}>OR</span>
+          <div style={{ flex:1, height:1, background:C.border }} />
+        </div>
+
+        <div onClick={() => { onUseCurrentLocation(); onClose(); }}
+          style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, border:`1.5px solid ${C.borderGreen}`, background:C.greenLight, borderRadius:14, padding:14, cursor:"pointer" }}>
+          <span style={{ fontSize:15 }}>📍</span>
+          <span style={{ fontSize:14, fontWeight:700, color:C.green }}>Use my current location</span>
+        </div>
       </div>
+    </div>
+  );
+}
+
+// Brief transition shown after saving Preferences — makes the background
+// matching feel like it's actually doing something before landing back on
+// the (already-filtered) feed, rather than an instant, unexplained jump.
+function SearchInterstitial({ query }) {
+  const C = useContext(CContext);
+  return (
+    <div style={{ position:"absolute", inset:0, zIndex:500, background:C.headerGradient, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"0 40px", textAlign:"center" }}>
+      <div style={{ fontSize:38, marginBottom:16, animation:"pulse 1.1s ease-in-out infinite" }}>🔍</div>
+      <div style={{ fontFamily:"Fraunces, serif", fontSize:17, fontWeight:700, color:"#fff", marginBottom:6 }}>Finding who's fighting for you</div>
+      {query?.trim() && <div style={{ fontSize:12, color:"rgba(255,255,255,0.8)" }}>Matching "{query.length > 60 ? query.slice(0, 60) + "…" : query}"</div>}
     </div>
   );
 }
@@ -1588,6 +1625,7 @@ export default function App() {
   const [activeOrg, setActiveOrg]         = useState(null);
   const [interests, setInterests]         = useState({ query:"", categories:[], orgs:[] });
   const [geo, setGeo]                     = useState({ status:"locating", distanceMiles:null });
+  const [interstitial, setInterstitial]   = useState(false);
 
   const skin = SKINS[skinId];
   const C    = makeC(skin);
@@ -1614,6 +1652,13 @@ export default function App() {
 
   const handleSelect       = z  => { setZip(z); setLocData(LOCATION_DATA[z]); setActiveTab("delivered"); setGeo({ status:"manual", distanceMiles:null }); };
 
+  const handleSavePreferences = updated => {
+    setInterests(updated);
+    setShowPreferences(false);
+    setInterstitial(true);
+    setTimeout(() => setInterstitial(false), 1300);
+  };
+
   const tab                 = TABS.find(t => t.id === activeTab);
   const items               = locData[activeTab] || [];
   const currentNeighborhood = NYC_LOCATIONS.find(l => l.zip === zip);
@@ -1631,7 +1676,8 @@ export default function App() {
     <div style={{ minHeight:"100vh", background:skin.shellBg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 20px", fontFamily:"Inter, sans-serif" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Inter:wght@400;500;600;700&display=swap');
-        * { box-sizing:border-box; } ::-webkit-scrollbar { display:none; } input:focus { outline:none; } a:hover { opacity:0.8; }
+        * { box-sizing:border-box; } ::-webkit-scrollbar { display:none; } input:focus, textarea:focus { outline:none; } a:hover { opacity:0.8; }
+        @keyframes pulse { 0%, 100% { transform:scale(1); opacity:1; } 50% { transform:scale(1.15); opacity:0.7; } }
       `}</style>
 
       <div style={{ width:375, height:812, background:C.bg, borderRadius:52, flexShrink:0, boxShadow:"0 0 0 2px #C8C4BC, 0 0 0 4px #B0ACA4, 0 40px 80px rgba(0,0,0,0.2), inset 0 0 0 1px rgba(255,255,255,0.7)", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column" }}>
@@ -1657,16 +1703,11 @@ export default function App() {
                 {hasPrefs && <span style={{ position:"absolute", top:-1, right:-1, width:10, height:10, borderRadius:"50%", background:C.amber, border:"2px solid rgba(255,255,255,0.9)" }} />}
               </div>
             </div>
-            <div style={{ marginTop:12, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 }}>
-              <div onClick={locateMe} title="Tap to use your current location" style={{ display:"flex", alignItems:"baseline", flexWrap:"wrap", gap:"2px 6px", cursor:"pointer" }}>
-                <span style={{ fontSize:12, color:"#fff", alignSelf:"center", opacity:geo.status === "locating" ? 0.6 : 1 }}>📍</span>
-                <span style={{ fontSize:14, fontWeight:700, color:"#fff" }}>{locationLabel}</span>
-                {locationSub && <span style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>{locationSub}</span>}
-                {distanceLabel && <span style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>· {distanceLabel}</span>}
-              </div>
-              <div onClick={() => setSearching(true)} title="Search a location" style={{ flexShrink:0, width:30, height:30, borderRadius:"50%", background:"rgba(255,255,255,0.22)", backdropFilter:"blur(6px)", border:"1px solid rgba(255,255,255,0.35)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
-                <span style={{ fontSize:12 }}>🔍</span>
-              </div>
+            <div onClick={() => setSearching(true)} title="Tap to change location" style={{ marginTop:12, display:"flex", alignItems:"baseline", flexWrap:"wrap", gap:"2px 6px", cursor:"pointer" }}>
+              <span style={{ fontSize:12, color:"#fff", alignSelf:"center", opacity:geo.status === "locating" ? 0.6 : 1 }}>📍</span>
+              <span style={{ fontSize:14, fontWeight:700, color:"#fff" }}>{locationLabel}</span>
+              {locationSub && <span style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>{locationSub}</span>}
+              {distanceLabel && <span style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>· {distanceLabel}</span>}
             </div>
           </div>
         </div>
@@ -1687,9 +1728,10 @@ export default function App() {
           <CategoryGroupedList items={items} tense={tab.tense} tabId={activeTab} interests={interests} onOrgClick={setActiveOrg} />
         </div>
 
-        {searching       && <SearchModal       currentZip={zip} onSelect={handleSelect} onClose={() => setSearching(false)} />}
+        {searching       && <LocationModal     onSelectZip={handleSelect} onUseCurrentLocation={locateMe} onClose={() => setSearching(false)} />}
         {activeOrg       && <OrgSheet          orgId={activeOrg} onClose={() => setActiveOrg(null)} />}
-        {showPreferences && <PreferencesPanel  interests={interests} onInterestsChange={setInterests} onClose={() => setShowPreferences(false)} />}
+        {showPreferences && <PreferencesPanel  interests={interests} onSave={handleSavePreferences} onClose={() => setShowPreferences(false)} />}
+        {interstitial    && <SearchInterstitial query={interests.query} />}
 
       </div>
 
