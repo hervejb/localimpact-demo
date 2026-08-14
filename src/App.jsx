@@ -1309,7 +1309,7 @@ const TABS = [
 ];
 const TAB_COLORS = {
   delivered:  { dot:"#0369A1", active:"#0369A1", activeBg:"#E0F2FE", border:"#7DD3FC" },
-  inProgress: { dot:"#F59E0B", active:"#F59E0B", activeBg:"#FEF3C7", border:"#FCD34D" },
+  inProgress: { dot:"#0369A1", active:"#0369A1", activeBg:"#E0F2FE", border:"#7DD3FC" },
 };
 const STORY_LABELS = {
   past:    ["The issue","Why it mattered","What was done","What happened"],
@@ -1347,12 +1347,6 @@ function nearestLocation(lat, lon) {
     if (d < bestDist) { bestDist = d; bestZip = zip; }
   }
   return { zip: bestZip, distanceMiles: bestDist };
-}
-
-function formatMiles(mi) {
-  if (mi < 0.15) return "right here";
-  if (mi < 10) return `${mi.toFixed(1)} mi away`;
-  return `${Math.round(mi)} mi away`;
 }
 
 // Matches a typed/dictated location description — an address, city, zip,
@@ -1422,7 +1416,7 @@ function StoryCard({ item, tense, tabId, onOrgClick }) {
           padding:"14px 14px 14px 13px", transition:"box-shadow 0.15s" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10 }}>
           <span style={{ flex:1, fontSize:15, fontWeight:650, lineHeight:1.5, color:C.forest }}>{item.summary}</span>
-          <span style={{ color:cat.color, fontSize:15, flexShrink:0, marginTop:2, transform:open ? "rotate(180deg)" : "none", transition:"transform 0.2s" }}>▾</span>
+          <span style={{ color:cat.color, fontSize:17, fontWeight:700, flexShrink:0, width:20, textAlign:"center", lineHeight:1 }}>{open ? "−" : "+"}</span>
         </div>
         {org && (
           <div onClick={e => { e.stopPropagation(); onOrgClick(item.orgId); }}
@@ -1540,7 +1534,6 @@ function LocationModal({ onSelectZip, onUseCurrentLocation, onClose }) {
   const C = useContext(CContext);
   const [query, setQuery]         = useState("");
   const [listening, setListening] = useState(false);
-  const [notFound, setNotFound]   = useState(false);
   const speechSupported = typeof window !== "undefined" && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 
   const dictate = () => {
@@ -1557,10 +1550,10 @@ function LocationModal({ onSelectZip, onUseCurrentLocation, onClose }) {
     recognition.start();
   };
 
-  const go = () => {
+  const save = () => {
     const zip = matchLocationQuery(query);
-    if (zip) { onSelectZip(zip); onClose(); }
-    else setNotFound(true);
+    if (zip) onSelectZip(zip);
+    onClose();
   };
 
   return (
@@ -1572,7 +1565,7 @@ function LocationModal({ onSelectZip, onUseCurrentLocation, onClose }) {
       <div style={{ flex:1, padding:"4px 20px 20px" }}>
         <div style={{ fontSize:12, color:C.textLight, marginBottom:14 }}>Type or say an address, city, or zip code.</div>
         <div style={{ display:"flex", alignItems:"center", gap:8, background:C.white, border:`1.5px solid ${C.border}`, borderRadius:14, padding:"4px 6px 4px 14px" }}>
-          <input autoFocus value={query} onChange={e => { setQuery(e.target.value); setNotFound(false); }} onKeyDown={e => e.key === "Enter" && go()}
+          <input autoFocus value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === "Enter" && save()}
             placeholder="e.g. Miami Beach, 10025, Hyde Park…" spellCheck="true" autoCapitalize="words"
             style={{ flex:1, minWidth:0, border:"none", outline:"none", background:"transparent", fontSize:14, color:C.forest, fontFamily:"Inter, sans-serif", padding:"10px 0" }} />
           {speechSupported && (
@@ -1581,9 +1574,8 @@ function LocationModal({ onSelectZip, onUseCurrentLocation, onClose }) {
             </div>
           )}
         </div>
-        {notFound && <div style={{ marginTop:10, fontSize:12.5, color:C.amber }}>Couldn't match that to a covered location — try a zip code or city name.</div>}
 
-        <div onClick={go} style={{ marginTop:14, background:C.green, borderRadius:14, padding:14, textAlign:"center", fontSize:15, fontWeight:700, color:"#fff", cursor:"pointer", boxShadow:`0 6px 16px ${C.green}55` }}>Find</div>
+        <div onClick={save} style={{ marginTop:14, background:C.green, borderRadius:14, padding:14, textAlign:"center", fontSize:15, fontWeight:700, color:"#fff", cursor:"pointer", boxShadow:`0 6px 16px ${C.green}55` }}>Save</div>
 
         <div style={{ display:"flex", alignItems:"center", gap:10, margin:"22px 0" }}>
           <div style={{ flex:1, height:1, background:C.border }} />
@@ -1666,10 +1658,6 @@ export default function App() {
 
   const locationLabel = geo.status === "locating" ? "Finding your location…" : (currentNeighborhood?.label || locData.location);
   const locationSub   = geo.status === "locating" ? null : (currentNeighborhood?.sub || null);
-  const distanceLabel = geo.status === "sensed"      ? formatMiles(geo.distanceMiles)
-                       : geo.status === "denied"      ? "location off"
-                       : geo.status === "unsupported" ? "location unavailable"
-                       : null;
   return (
     <CContext.Provider value={C}>
     <SkinContext.Provider value={skin}>
@@ -1685,29 +1673,25 @@ export default function App() {
         <div style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)", width:120, height:30, background:"rgba(0,0,0,0.28)", borderRadius:"0 0 20px 20px", zIndex:100 }} />
 
         <div style={{ background:C.headerGradient, flexShrink:0, borderRadius:"0 0 26px 26px", paddingBottom:18, boxShadow:"0 4px 20px rgba(0,0,0,0.12)" }}>
-          <div style={{ height:44, display:"flex", alignItems:"flex-end", justifyContent:"space-between", padding:"0 24px 6px" }}>
-            <span style={{ fontSize:15, fontWeight:700, color:"#fff" }}>{new Date().toLocaleTimeString([],{ hour:"2-digit", minute:"2-digit" })}</span>
+          <div style={{ height:30, display:"flex", alignItems:"flex-end", justifyContent:"flex-end", padding:"0 24px 6px" }}>
             <span style={{ fontSize:11, color:"rgba(255,255,255,0.85)" }}>●●●● WiFi 87%</span>
           </div>
 
           <div style={{ padding:"6px 20px 0" }}>
-            <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:8 }}>
-              <div>
-                <div style={{ fontFamily:"Fraunces, serif", fontSize:21, fontWeight:900, color:"#fff", letterSpacing:"-0.02em", marginBottom:2 }}>
-                  {skin.logo} {skin.appName}
-                </div>
-                <div style={{ fontSize:12, color:"rgba(255,255,255,0.85)" }}>{skin.tagline}</div>
-              </div>
-              <div onClick={() => setShowPreferences(true)} title="Preferences" style={{ position:"relative", flexShrink:0, width:36, height:36, borderRadius:"50%", background:"rgba(255,255,255,0.22)", backdropFilter:"blur(6px)", border:"1px solid rgba(255,255,255,0.35)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
-                <span style={{ fontSize:15 }}>⚙️</span>
-                {hasPrefs && <span style={{ position:"absolute", top:-1, right:-1, width:10, height:10, borderRadius:"50%", background:C.amber, border:"2px solid rgba(255,255,255,0.9)" }} />}
-              </div>
+            <div style={{ fontFamily:"Fraunces, serif", fontSize:21, fontWeight:900, color:"#fff", letterSpacing:"-0.02em", marginBottom:2 }}>
+              {skin.logo} {skin.appName}
             </div>
-            <div onClick={() => setSearching(true)} title="Tap to change location" style={{ marginTop:12, display:"flex", alignItems:"baseline", flexWrap:"wrap", gap:"2px 6px", cursor:"pointer" }}>
-              <span style={{ fontSize:12, color:"#fff", alignSelf:"center", opacity:geo.status === "locating" ? 0.6 : 1 }}>📍</span>
-              <span style={{ fontSize:14, fontWeight:700, color:"#fff" }}>{locationLabel}</span>
-              {locationSub && <span style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>{locationSub}</span>}
-              {distanceLabel && <span style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>· {distanceLabel}</span>}
+            <div style={{ fontSize:12, color:"rgba(255,255,255,0.85)" }}>{skin.tagline}</div>
+            <div style={{ marginTop:12, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 }}>
+              <div onClick={() => setSearching(true)} title="Tap to change location" style={{ display:"flex", alignItems:"baseline", flexWrap:"wrap", gap:"2px 6px", cursor:"pointer" }}>
+                <span style={{ fontSize:12, color:"#fff", alignSelf:"center", opacity:geo.status === "locating" ? 0.6 : 1 }}>📍</span>
+                <span style={{ fontSize:14, fontWeight:700, color:"#fff" }}>{locationLabel}</span>
+                {locationSub && <span style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>{locationSub}</span>}
+              </div>
+              <div onClick={() => setShowPreferences(true)} title="Your topics" style={{ flexShrink:0, display:"flex", alignItems:"center", gap:5, cursor:"pointer" }}>
+                <span style={{ fontSize:12.5, fontWeight:700, color:"#fff" }}>Your topics</span>
+                {hasPrefs && <span style={{ width:7, height:7, borderRadius:"50%", background:C.amber, flexShrink:0 }} />}
+              </div>
             </div>
           </div>
         </div>
@@ -1737,7 +1721,7 @@ export default function App() {
 
       <div style={{ marginTop:16, fontSize:11, color:"#999", letterSpacing:"0.06em", textTransform:"uppercase", textAlign:"center" }}>
         {Object.keys(LOCATION_DATA).length} locations covered
-        {geo.status === "sensed"      && ` · using your location (${formatMiles(geo.distanceMiles)})`}
+        {geo.status === "sensed"      && " · using your location"}
         {geo.status === "denied"      && " · location off, showing default"}
         {geo.status === "unsupported" && " · location unavailable, showing default"}
         {geo.status === "manual"      && " · manually selected"}
