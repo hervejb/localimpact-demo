@@ -1388,9 +1388,9 @@ function OrgSheet({ orgId, onClose }) {
   );
 }
 
-function StoryCard({ item, tense, tabId, onOrgClick, defaultOpen }) {
+function StoryCard({ item, tense, tabId, onOrgClick }) {
   const C = useContext(CContext);
-  const [open, setOpen] = useState(!!defaultOpen);
+  const [open, setOpen] = useState(false);
   const tc = TAB_COLORS[tabId];
   const cat = CATEGORIES.find(c => c.id === item.category) || { color: tc.active };
   const isAction = tense === "action";
@@ -1451,7 +1451,7 @@ function StoryCard({ item, tense, tabId, onOrgClick, defaultOpen }) {
   );
 }
 
-function CategoryGroupedList({ items, tense, tabId, interests, onOrgClick, openSummary }) {
+function CategoryGroupedList({ items, tense, tabId, interests, onOrgClick }) {
   const C    = useContext(CContext);
   const skin = useContext(SkinContext);
   return (
@@ -1470,10 +1470,7 @@ function CategoryGroupedList({ items, tense, tabId, interests, onOrgClick, openS
                 <span style={{ fontSize:13 }}>{cat.icon}</span>{cat.label}
               </span>
             </div>
-            {catItems.map((item, i) => {
-              const isHeadlineTarget = item.summary === openSummary;
-              return <StoryCard key={`${i}-${isHeadlineTarget}`} item={item} tense={tense} tabId={tabId} onOrgClick={onOrgClick} defaultOpen={isHeadlineTarget} />;
-            })}
+            {catItems.map((item, i) => <StoryCard key={i} item={item} tense={tense} tabId={tabId} onOrgClick={onOrgClick} />)}
           </div>
         );
       })}
@@ -1481,26 +1478,14 @@ function CategoryGroupedList({ items, tense, tabId, interests, onOrgClick, openS
   );
 }
 
-// A single, always-live-editing preferences screen. "What do you care
-// about?" replaces separate topic/org checklists — the user describes
-// their interests in their own words (typed or dictated) and matchInterests
-// maps that in the background to topics and organizations. No Save button;
-// everything here applies as soon as it's decided, including the mapping.
-function PreferencesPanel({ skinId, onSkinChange, interests, onInterestsChange, onClose }) {
-  const C    = useContext(CContext);
-  const skin = useContext(SkinContext);
+// One question, one box, one Save. Typing (or dictating) what someone cares
+// about gets matched to topics and orgs entirely behind the scenes on Save —
+// no live preview, no checklists. Saving applies it and returns to the feed.
+function PreferencesPanel({ interests, onInterestsChange, onClose }) {
+  const C = useContext(CContext);
   const [query, setQuery]         = useState(interests.query || "");
   const [listening, setListening] = useState(false);
   const speechSupported = typeof window !== "undefined" && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      const matched = matchInterests(query);
-      onInterestsChange({ query, categories: matched.categories, orgs: matched.orgs });
-    }, 450);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]);
 
   const dictate = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1519,73 +1504,34 @@ function PreferencesPanel({ skinId, onSkinChange, interests, onInterestsChange, 
     recognition.start();
   };
 
-  const matchedCats = skin.categories.filter(c => interests.categories.includes(c.id));
-  const matchedOrgs = interests.orgs.map(id => ORGS[id]).filter(Boolean);
+  const save = () => {
+    const matched = matchInterests(query);
+    onInterestsChange({ query, categories: matched.categories, orgs: matched.orgs });
+    onClose();
+  };
 
   return (
     <div style={{ position:"absolute", inset:0, zIndex:300, background:C.bg, display:"flex", flexDirection:"column" }}>
-      <div style={{ padding:"52px 20px 16px", borderBottom:`1px solid ${C.border}`, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+      <div style={{ padding:"52px 20px 16px", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div style={{ fontFamily:"Fraunces, serif", fontSize:18, fontWeight:700, color:C.forest }}>Preferences</div>
-        <div onClick={onClose} style={{ fontSize:13, fontWeight:600, color:C.green, cursor:"pointer" }}>Done</div>
+        <div onClick={onClose} style={{ width:30, height:30, borderRadius:"50%", background:C.greenLight, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:13, color:C.textMid }}>✕</div>
       </div>
-      <div style={{ flex:1, overflowY:"auto", padding:"20px 20px 40px" }}>
-
-        <div style={{ fontSize:11, fontWeight:700, color:C.textLight, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:12 }}>View</div>
-        {Object.values(SKINS).map(s => {
-          const active = s.id === skinId;
-          return (
-            <div key={s.id} onClick={() => onSkinChange(s.id)} style={{ display:"flex", alignItems:"center", gap:14, background:active ? s.tintBg : C.white, border:`1.5px solid ${active ? s.primaryColor : C.border}`, borderRadius:16, padding:"14px 16px", marginBottom:8, cursor:"pointer" }}>
-              <div style={{ width:44, height:44, borderRadius:12, background:s.headerGradient, display:"flex", alignItems:"center", justifyContent:"center", fontSize:21, flexShrink:0, boxShadow:`0 4px 10px ${s.primaryColor}55` }}>{s.logo}</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:14, fontWeight:700, color:C.forest, marginBottom:2 }}>{s.menuLabel}</div>
-                <div style={{ fontSize:12, color:C.textLight }}>{s.menuDesc}</div>
-              </div>
-              {active && <span style={{ color:s.primaryColor, fontSize:18 }}>✓</span>}
-            </div>
-          );
-        })}
-
-        <div style={{ height:1, background:C.border, margin:"22px 0 18px" }} />
-
+      <div style={{ flex:1, overflowY:"auto", padding:"4px 20px 100px" }}>
         <div style={{ fontSize:11, fontWeight:700, color:C.textLight, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:4 }}>What do you care about?</div>
-        <div style={{ fontSize:12, color:C.textLight, marginBottom:12 }}>Type or say it in your own words — we'll match it to local topics and organizations for you.</div>
-        <div style={{ display:"flex", alignItems:"center", gap:8, background:C.white, border:`1.5px solid ${C.border}`, borderRadius:14, padding:"4px 6px 4px 14px" }}>
-          <input value={query} onChange={e => setQuery(e.target.value)} placeholder="e.g. clean air, parks, climate change…"
-            style={{ flex:1, minWidth:0, border:"none", outline:"none", background:"transparent", fontSize:14, color:C.forest, fontFamily:"Inter, sans-serif", padding:"10px 0" }} />
-          {query && (
-            <span onMouseDown={e => { e.preventDefault(); setQuery(""); }} style={{ fontSize:13, color:C.textLight, cursor:"pointer", flexShrink:0 }}>✕</span>
-          )}
+        <div style={{ fontSize:12, color:C.textLight, marginBottom:14 }}>Type or say it in your own words.</div>
+        <div style={{ position:"relative" }}>
+          <textarea value={query} onChange={e => setQuery(e.target.value)} rows={7}
+            placeholder="e.g. clean air, parks and trees near me, climate change, protecting local wildlife…"
+            style={{ width:"100%", minHeight:190, border:`1.5px solid ${C.border}`, borderRadius:16, background:C.white, fontSize:15, lineHeight:1.6, color:C.forest, fontFamily:"Inter, sans-serif", padding:"16px 52px 16px 16px", resize:"vertical" }} />
           {speechSupported && (
-            <div onClick={dictate} title="Dictate" style={{ width:34, height:34, borderRadius:"50%", flexShrink:0, background:listening ? C.amber : C.greenLight, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
-              <span style={{ fontSize:14 }}>{listening ? "●" : "🎙️"}</span>
+            <div onClick={dictate} title="Dictate" style={{ position:"absolute", right:10, bottom:10, width:38, height:38, borderRadius:"50%", background:listening ? C.amber : C.greenLight, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", boxShadow:"0 2px 6px rgba(0,0,0,0.12)" }}>
+              <span style={{ fontSize:16 }}>{listening ? "●" : "🎙️"}</span>
             </div>
           )}
         </div>
-
-        {query.trim() ? (
-          <div style={{ marginTop:16 }}>
-            <div style={{ fontSize:11, fontWeight:700, color:C.textLight, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:10 }}>
-              {matchedCats.length || matchedOrgs.length ? "We matched" : "No matches yet"}
-            </div>
-            {matchedCats.length === 0 && matchedOrgs.length === 0 && (
-              <div style={{ fontSize:13, color:C.textLight, lineHeight:1.6 }}>Try a topic like "clean air," "parks," or "climate."</div>
-            )}
-            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-              {matchedCats.map(cat => (
-                <span key={cat.id} style={{ display:"inline-flex", alignItems:"center", gap:6, fontSize:12, fontWeight:700, color:"#fff", background:cat.color, padding:"6px 12px 6px 9px", borderRadius:20 }}>
-                  <span>{cat.icon}</span>{cat.label}
-                </span>
-              ))}
-              {matchedOrgs.map(org => (
-                <span key={org.id} style={{ display:"inline-flex", alignItems:"center", gap:6, fontSize:12, fontWeight:700, color:C.green, background:C.greenLight, border:`1px solid ${C.borderGreen}`, padding:"6px 12px 6px 9px", borderRadius:20 }}>
-                  <span>{org.emoji}</span>{org.name}
-                </span>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div style={{ marginTop:14, fontSize:12, color:C.textLight }}>Nothing typed yet — you'll see everything in the meantime.</div>
-        )}
+      </div>
+      <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:"16px 20px 32px", background:C.bg, borderTop:`1px solid ${C.border}` }}>
+        <div onClick={save} style={{ background:C.green, borderRadius:14, padding:14, textAlign:"center", fontSize:15, fontWeight:700, color:"#fff", cursor:"pointer", boxShadow:`0 6px 16px ${C.green}55` }}>Save</div>
       </div>
     </div>
   );
@@ -1633,7 +1579,7 @@ function SearchModal({ currentZip, onSelect, onClose }) {
 }
 
 export default function App() {
-  const [skinId, setSkinId]               = useState("civic");
+  const [skinId]                          = useState("civic");
   const [zip, setZip]                     = useState("10025");
   const [locData, setLocData]             = useState(LOCATION_DATA["10025"]);
   const [activeTab, setActiveTab]         = useState("delivered");
@@ -1642,7 +1588,6 @@ export default function App() {
   const [activeOrg, setActiveOrg]         = useState(null);
   const [interests, setInterests]         = useState({ query:"", categories:[], orgs:[] });
   const [geo, setGeo]                     = useState({ status:"locating", distanceMiles:null });
-  const [openSummary, setOpenSummary]     = useState(null);
 
   const skin = SKINS[skinId];
   const C    = makeC(skin);
@@ -1668,7 +1613,6 @@ export default function App() {
   useEffect(() => { locateMe(); }, []);
 
   const handleSelect       = z  => { setZip(z); setLocData(LOCATION_DATA[z]); setActiveTab("delivered"); setGeo({ status:"manual", distanceMiles:null }); };
-  const handleSkinChange   = id => { setSkinId(id); setActiveTab("delivered"); };
 
   const tab                 = TABS.find(t => t.id === activeTab);
   const items               = locData[activeTab] || [];
@@ -1681,13 +1625,6 @@ export default function App() {
                        : geo.status === "denied"      ? "location off"
                        : geo.status === "unsupported" ? "location unavailable"
                        : null;
-  const nearby = geo.status === "sensed" && geo.distanceMiles != null && geo.distanceMiles <= 3;
-
-  const headline = locData.delivered?.[0]  ? { item: locData.delivered[0],  tabId: "delivered" }
-                  : locData.inProgress?.[0] ? { item: locData.inProgress[0], tabId: "inProgress" }
-                  : null;
-  const headlineEyebrow = nearby ? "Right where you're standing" : geo.status === "sensed" ? "Closest covered story" : "Headline for this area";
-
   return (
     <CContext.Provider value={C}>
     <SkinContext.Provider value={skin}>
@@ -1734,19 +1671,7 @@ export default function App() {
           </div>
         </div>
 
-        {headline && geo.status !== "locating" && (
-          <div onClick={() => { setActiveTab(headline.tabId); setOpenSummary(headline.item.summary); }}
-            style={{ margin:"-14px 20px 0", background:C.amber, borderRadius:16, padding:"13px 15px", cursor:"pointer", flexShrink:0, boxShadow:`0 8px 20px ${C.amber}55`, position:"relative", zIndex:2 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}>
-              <span style={{ fontSize:13, background:"rgba(255,255,255,0.3)", borderRadius:999, width:20, height:20, display:"inline-flex", alignItems:"center", justifyContent:"center" }}>📍</span>
-              <span style={{ fontSize:10, fontWeight:800, letterSpacing:"0.08em", textTransform:"uppercase", color:"#fff" }}>{headlineEyebrow}</span>
-            </div>
-            <div style={{ fontSize:14.5, fontWeight:700, color:"#fff", lineHeight:1.4 }}>{headline.item.summary}</div>
-            <div style={{ marginTop:6, fontSize:11, color:"rgba(255,255,255,0.9)", fontWeight:600 }}>Tap to read the full story →</div>
-          </div>
-        )}
-
-        <div style={{ display:"flex", flexShrink:0, margin:"14px 20px 0", background:C.greenLight, borderRadius:999, padding:4, gap:4 }}>
+        <div style={{ display:"flex", flexShrink:0, margin:"16px 20px 0", background:C.greenLight, borderRadius:999, padding:4, gap:4 }}>
           {TABS.map(t => {
             const tc = TAB_COLORS[t.id];
             const isActive = activeTab === t.id;
@@ -1759,12 +1684,12 @@ export default function App() {
         </div>
 
         <div style={{ flex:1, overflowY:"auto", padding:"16px 20px 32px" }}>
-          <CategoryGroupedList items={items} tense={tab.tense} tabId={activeTab} interests={interests} onOrgClick={setActiveOrg} openSummary={openSummary} />
+          <CategoryGroupedList items={items} tense={tab.tense} tabId={activeTab} interests={interests} onOrgClick={setActiveOrg} />
         </div>
 
         {searching       && <SearchModal       currentZip={zip} onSelect={handleSelect} onClose={() => setSearching(false)} />}
         {activeOrg       && <OrgSheet          orgId={activeOrg} onClose={() => setActiveOrg(null)} />}
-        {showPreferences && <PreferencesPanel  skinId={skinId} onSkinChange={handleSkinChange} interests={interests} onInterestsChange={setInterests} onClose={() => setShowPreferences(false)} />}
+        {showPreferences && <PreferencesPanel  interests={interests} onInterestsChange={setInterests} onClose={() => setShowPreferences(false)} />}
 
       </div>
 
