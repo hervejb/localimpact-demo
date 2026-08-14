@@ -1405,8 +1405,9 @@ function StoryCard({ item, tense, tabId, onOrgClick }) {
   const C = useContext(CContext);
   const [open, setOpen] = useState(false);
   const cat = CATEGORIES.find(c => c.id === item.category) || { color: TAB_COLORS[tabId].active };
+  const isAction = Array.isArray(item.steps);
   const labels = STORY_LABELS[tense];
-  const storyFields = [item.issue, item.why, item.done, item.outcome];
+  const storyFields = isAction ? [] : [item.issue, item.why, item.done, item.outcome];
   const org = ORGS[item.orgId];
   return (
     <div style={{ marginBottom:12 }}>
@@ -1427,7 +1428,7 @@ function StoryCard({ item, tense, tabId, onOrgClick }) {
           </div>
         )}
       </div>
-      {open && (
+      {open && !isAction && (
         <div style={{ marginTop:6, background:C.white, borderLeft:`5px solid ${cat.color}`, borderRadius:16, padding:16, fontSize:13.5, lineHeight:1.75, color:C.textMid, boxShadow:"0 1px 3px rgba(30,20,50,0.06)" }}>
           {storyFields.map((text, i) => (
             <div key={i} style={{ marginBottom:i < 3 ? 14 : 0 }}>
@@ -1435,6 +1436,17 @@ function StoryCard({ item, tense, tabId, onOrgClick }) {
               <div>{text}</div>
             </div>
           ))}
+        </div>
+      )}
+      {open && isAction && (
+        <div style={{ marginTop:6, background:C.white, borderLeft:`5px solid ${cat.color}`, borderRadius:16, padding:16, boxShadow:"0 1px 3px rgba(30,20,50,0.06)" }}>
+          {item.steps.map((step, i) => (
+            <div key={i} style={{ display:"flex", gap:10, marginBottom:10, alignItems:"flex-start" }}>
+              <div style={{ flexShrink:0, width:22, height:22, borderRadius:"50%", background:cat.color, fontSize:11, fontWeight:700, color:"#fff", display:"flex", alignItems:"center", justifyContent:"center" }}>{i + 1}</div>
+              <div style={{ fontSize:13, lineHeight:1.7, color:C.textMid, paddingTop:2 }}>{step}</div>
+            </div>
+          ))}
+          {item.link && <a href={item.link} target="_blank" rel="noopener noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:4, marginTop:6, fontSize:13, fontWeight:700, color:cat.color, textDecoration:"none", borderBottom:`1px solid ${cat.border || C.borderGreen}`, paddingBottom:1 }}>↗ {item.linkLabel}</a>}
         </div>
       )}
     </div>
@@ -1652,7 +1664,13 @@ export default function App() {
   };
 
   const tab                 = TABS.find(t => t.id === activeTab);
-  const items               = locData[activeTab] || [];
+  // "Fighting for you" folds in the old "Get involved" content — the active
+  // campaigns and the concrete ways to join one are both part of the same
+  // ongoing fight, and splitting them into a third tab had silently made
+  // every "involved"-only category (all of "justice") unreachable.
+  const items                = activeTab === "inProgress"
+                              ? [...(locData.inProgress || []), ...(locData.involved || [])]
+                              : (locData[activeTab] || []);
   const currentNeighborhood = NYC_LOCATIONS.find(l => l.zip === zip);
   const hasPrefs            = interests.categories.length > 0 || interests.orgs.length > 0;
 
