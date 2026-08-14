@@ -1349,6 +1349,38 @@ function nearestLocation(lat, lon) {
   return { zip: bestZip, distanceMiles: bestDist };
 }
 
+// localStorage keys so a manually chosen location and saved criteria stick
+// across a page reload instead of silently resetting to the defaults.
+const STORAGE_KEYS = {
+  zip: "localimpact.zip",
+  geoStatus: "localimpact.geoStatus",
+  interests: "localimpact.interests",
+};
+
+function readStoredZip() {
+  try {
+    const savedZip = window.localStorage.getItem(STORAGE_KEYS.zip);
+    const savedStatus = window.localStorage.getItem(STORAGE_KEYS.geoStatus);
+    if (savedZip && savedStatus === "manual" && LOCATION_DATA[savedZip]) return savedZip;
+  } catch {}
+  return null;
+}
+
+function readStoredInterests() {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEYS.interests);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    return {
+      query: typeof parsed.query === "string" ? parsed.query : "",
+      categories: Array.isArray(parsed.categories) ? parsed.categories : [],
+      orgs: Array.isArray(parsed.orgs) ? parsed.orgs : [],
+    };
+  } catch {}
+  return null;
+}
+
 // Matches a typed/dictated location description — an address, city, zip,
 // or neighborhood name — against the covered locations. No geocoding API;
 // a direct zip hit wins outright, otherwise the entry whose name/zip/
@@ -1658,14 +1690,15 @@ function SearchInterstitial({ query }) {
 
 export default function App() {
   const [skinId]                          = useState("civic");
-  const [zip, setZip]                     = useState("10025");
-  const [locData, setLocData]             = useState(LOCATION_DATA["10025"]);
+  const [initialManualZip]                = useState(() => readStoredZip());
+  const [zip, setZip]                     = useState(initialManualZip || "10025");
+  const [locData, setLocData]             = useState(LOCATION_DATA[initialManualZip || "10025"]);
   const [activeTab, setActiveTab]         = useState("delivered");
   const [searching, setSearching]         = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
   const [activeOrg, setActiveOrg]         = useState(null);
-  const [interests, setInterests]         = useState({ query:"", categories:[], orgs:[] });
-  const [geo, setGeo]                     = useState({ status:"locating", distanceMiles:null });
+  const [interests, setInterests]         = useState(() => readStoredInterests() || { query:"", categories:[], orgs:[] });
+  const [geo, setGeo]                     = useState(() => initialManualZip ? { status:"manual", distanceMiles:null } : { status:"locating", distanceMiles:null });
   const [interstitial, setInterstitial]   = useState(false);
   const [liveResults, setLiveResults]     = useState({ delivered:[], inProgress:[] });
 
@@ -1691,7 +1724,31 @@ export default function App() {
     );
   };
 
-  useEffect(() => { locateMe(); }, []);
+  // Only auto-sense on mount if the user hasn't explicitly picked a location
+  // in a prior session — a persisted manual choice sticks until they change
+  // it or explicitly tap "Use my current location" again.
+  useEffect(() => { if (!initialManualZip) locateMe(); }, []);
+
+  // Persist the location choice so a page reload (routine on mobile — a
+  // backgrounded or revisited tab) doesn't silently reset to the default zip
+  // and re-trigger GPS sensing. A manual pick is remembered; explicitly
+  // re-sensing clears it so future reloads go back to auto-sensing.
+  useEffect(() => {
+    try {
+      if (geo.status === "manual") {
+        window.localStorage.setItem(STORAGE_KEYS.zip, zip);
+        window.localStorage.setItem(STORAGE_KEYS.geoStatus, "manual");
+      } else if (geo.status === "sensed") {
+        window.localStorage.removeItem(STORAGE_KEYS.zip);
+        window.localStorage.removeItem(STORAGE_KEYS.geoStatus);
+      }
+    } catch {}
+  }, [zip, geo.status]);
+
+  // Persist "what you care about" the same way, so it survives a reload too.
+  useEffect(() => {
+    try { window.localStorage.setItem(STORAGE_KEYS.interests, JSON.stringify(interests)); } catch {}
+  }, [interests]);
 
   const handleSelect       = z  => { setZip(z); setLocData(LOCATION_DATA[z]); setActiveTab("delivered"); setLiveResults({ delivered:[], inProgress:[] }); setGeo({ status:"manual", distanceMiles:null }); };
 
