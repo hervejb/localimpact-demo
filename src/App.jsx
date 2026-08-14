@@ -1403,6 +1403,27 @@ function matchLocationQuery(text) {
   return bestZip;
 }
 
+// Falls back to a real, free geocode (via /api/geocode, which proxies
+// OpenStreetMap Nominatim) when the local fuzzy match in matchLocationQuery
+// can't find anything — e.g. "Fort Lauderdale" or a street address that
+// isn't one of the 13 curated neighborhood names. Snaps the geocoded
+// coordinates to the nearest covered location the same way GPS sensing
+// does. Never throws: any failure just resolves to null, same as a local
+// match miss, so the caller's existing "do nothing, just close" handling
+// covers it for free.
+async function geocodeAndSnap(text) {
+  try {
+    const res = await fetch(`/api/geocode?q=${encodeURIComponent(text)}`);
+    if (!res.ok) return null;
+    const { lat, lon } = await res.json();
+    if (lat == null || lon == null) return null;
+    const nearest = nearestLocation(lat, lon);
+    return nearest.zip || null;
+  } catch {
+    return null;
+  }
+}
+
 // Calls the /api/search serverless function — the live "ask anything
 // anywhere" path. It's grounded with real web search and never throws:
 // a missing API key, a network error, or a bad response all resolve to an
@@ -1615,6 +1636,7 @@ function LocationModal({ onSelectZip, onUseCurrentLocation, onClose }) {
   const C = useContext(CContext);
   const [query, setQuery]         = useState("");
   const [listening, setListening] = useState(false);
+  const [saving, setSaving]       = useState(false);
   const speechSupported = typeof window !== "undefined" && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 
   const dictate = () => {
@@ -1631,9 +1653,14 @@ function LocationModal({ onSelectZip, onUseCurrentLocation, onClose }) {
     recognition.start();
   };
 
-  const save = () => {
-    const zip = matchLocationQuery(query);
-    if (zip) onSelectZip(zip);
+  const save = async () => {
+    if (saving) return;
+    const localZip = matchLocationQuery(query);
+    if (localZip) { onSelectZip(localZip); onClose(); return; }
+    setSaving(true);
+    const geocodedZip = await geocodeAndSnap(query);
+    setSaving(false);
+    if (geocodedZip) onSelectZip(geocodedZip);
     onClose();
   };
 
@@ -1656,7 +1683,7 @@ function LocationModal({ onSelectZip, onUseCurrentLocation, onClose }) {
           )}
         </div>
 
-        <div onClick={save} style={{ marginTop:14, background:C.green, borderRadius:14, padding:14, textAlign:"center", fontSize:15, fontWeight:700, color:"#fff", cursor:"pointer", boxShadow:`0 6px 16px ${C.green}55` }}>Save</div>
+        <div onClick={save} style={{ marginTop:14, background:C.green, borderRadius:14, padding:14, textAlign:"center", fontSize:15, fontWeight:700, color:"#fff", cursor:"pointer", boxShadow:`0 6px 16px ${C.green}55`, opacity:saving ? 0.7 : 1 }}>{saving ? "Finding…" : "Save"}</div>
 
         <div style={{ display:"flex", alignItems:"center", gap:10, margin:"22px 0" }}>
           <div style={{ flex:1, height:1, background:C.border }} />

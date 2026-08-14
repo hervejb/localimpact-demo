@@ -55,6 +55,51 @@ const RESULT_SCHEMA = {
   additionalProperties: false,
 };
 
+// Free fallback data source, used only when ANTHROPIC_API_KEY isn't set —
+// e.g. so testers you invite can try the "ask anything anywhere" flow
+// without needing your paid key. ProPublica's Nonprofit Explorer is free,
+// needs no key, and covers every US 501(c)(3)'s IRS filings, but it's a
+// name/registry search, not a topic search — it can't tell you who "fought
+// for" something, only who's registered and roughly what field they're in.
+// So results here are deliberately framed as "a registered nonprofit near
+// you, worth looking into" rather than any claim about what they did —
+// there's no filing data to back up an impact claim, so we don't make one.
+function stateCodeFromLabel(locationLabel) {
+  const m = /,\s*([A-Z]{2})\s*$/.exec((locationLabel || "").trim());
+  return m ? m[1] : null;
+}
+
+async function searchProPublica(topic, locationLabel) {
+  const state = stateCodeFromLabel(locationLabel);
+  const url = `https://projects.propublica.org/nonprofits/api/v2/search.json?q=${encodeURIComponent(topic)}${state ? `&state[id]=${state}` : ""}`;
+  const response = await fetch(url);
+  if (!response.ok) return [];
+  const data = await response.json();
+  const orgs = Array.isArray(data.organizations) ? data.organizations.slice(0, 4) : [];
+  return orgs.map(org => {
+    const city = org.city || "";
+    const state = org.state || "";
+    const place = [city, state].filter(Boolean).join(", ");
+    return {
+      tense: "present",
+      category: "justice",
+      summary: `${org.name} is a nonprofit registered ${place ? `in ${place}` : "near you"} — worth looking into for ${topic}.`,
+      issue: "", why: "", done: "", outcome: "",
+      bulletLink: `https://projects.propublica.org/nonprofits/organizations/${org.ein}`,
+      bulletLinkLabel: "View filings on ProPublica",
+      org: {
+        name: org.name,
+        emoji: "🏢",
+        shortDesc: `Nonprofit registered ${place ? `in ${place}` : ""}.`.trim(),
+        about: "Registered as a tax-exempt organization with the IRS. See its public filings for mission and finances.",
+        what: "ProPublica's Nonprofit Explorer has its filed Form 990s — the most reliable public record of what it reports doing.",
+        how: "Look up current contact info from its filings or website to ask about volunteering or donating.",
+        link: `https://projects.propublica.org/nonprofits/organizations/${org.ein}`,
+      },
+    };
+  });
+}
+
 function systemPrompt() {
   return `You are a careful local-impact researcher for a civic app. Given a topic and a place, use web search to find REAL, VERIFIABLE nonprofit or civic organizations that have worked on that topic in or near that place.
 
@@ -74,13 +119,6 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    // No key configured — fail open with an empty result, not an error.
-    res.status(200).json({ items: [] });
-    return;
-  }
-
   let body = req.body;
   if (typeof body === "string") {
     try { body = JSON.parse(body); } catch { body = {}; }
@@ -91,6 +129,20 @@ module.exports = async (req, res) => {
 
   if (!topic) {
     res.status(200).json({ items: [] });
+    return;
+  }
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    // No Claude key configured — fall back to a free, no-key data source so
+    // testers without your key still see something real, instead of just
+    // an empty result.
+    try {
+      const items = await searchProPublica(topic, locationLabel);
+      res.status(200).json({ items });
+    } catch {
+      res.status(200).json({ items: [] });
+    }
     return;
   }
 

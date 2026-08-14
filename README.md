@@ -14,6 +14,13 @@ Deployed at: *(your Vercel URL goes here)*
   the nearest covered area (falls back to Upper West Side, Manhattan if
   location is denied or unsupported). Tap the location line to type or
   dictate a different address/city/zip, or revert to your current location.
+  A typed location is matched locally first; if it isn't one of the 13
+  curated neighborhoods (e.g. "Fort Lauderdale"), it's geocoded via a free
+  OpenStreetMap Nominatim lookup (`api/geocode.js`) and snapped to the
+  nearest covered area, the same way GPS sensing works.
+- 💾 A manually chosen location and your saved "what do you care about"
+  criteria persist in `localStorage` and stay in effect until you change
+  them again — surviving page reloads instead of silently resetting.
 - 🗂 Two tabs: **Won for you** (completed wins) and **Fighting for you**
   (active campaigns and concrete ways to help)
 - 🏷 Issue categories: Environmental Health, Climate & Energy, Land & Green Space, Community & Justice
@@ -34,14 +41,22 @@ have worked on that topic near that location, shaped to fit the app's UI.
 Live results are labeled "Found via live search — verify before relying on
 this" so they're never confused with the editorially curated content.
 
-**To enable it:** set `ANTHROPIC_API_KEY` as an environment variable in the
-Vercel project (Project Settings → Environment Variables), using a key from
-[the Anthropic Console](https://console.anthropic.com/). Without a key, the
-search silently returns nothing extra — the rest of the app is unaffected.
+**To enable the Claude-powered version:** set `ANTHROPIC_API_KEY` as an
+environment variable in the Vercel project (Project Settings → Environment
+Variables), using a key from [the Anthropic Console](https://console.anthropic.com/).
 It only runs server-side; the key is never sent to the browser. There's no
 local equivalent for `vite dev` — the serverless function only exists once
 deployed to Vercel (or run via `vercel dev`), so local development always
-sees the graceful empty-result fallback.
+sees the fallback below.
+
+**Without a key** (e.g. for testers you invite who don't have your key),
+`api/search.js` automatically falls back to
+[ProPublica's Nonprofit Explorer API](https://projects.propublica.org/nonprofits/api/) —
+free, no key required, and backed by real IRS nonprofit filings. It's a
+name/registry search rather than a topic search, so results are framed as
+"a registered nonprofit near you, worth looking into" rather than any claim
+about what the org has done — there's no filing data to back up an impact
+claim, so none is made.
 
 ## Locations Covered
 
@@ -59,7 +74,8 @@ misleading about how close that actually is.
 
 - React 18
 - Vite
-- `api/search.js` — a Vercel serverless function using the Anthropic SDK for the live search feature
+- `api/search.js` — a Vercel serverless function using the Anthropic SDK for the live search feature, with a free ProPublica-backed fallback when no key is set
+- `api/geocode.js` — a Vercel serverless function proxying OpenStreetMap Nominatim for free geocoding of typed locations
 - Deployed on Vercel
 
 ## Development
