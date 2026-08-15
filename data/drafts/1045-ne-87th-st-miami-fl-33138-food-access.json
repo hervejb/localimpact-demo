@@ -1,0 +1,30 @@
+{
+  "query": "1045 NE 87th St, Miami, FL 33138",
+  "topic": "food access and food insecurity",
+  "capturedAt": "2026-08-15T00:00:00.000Z",
+  "capturedNear": {
+    "lat": 25.855548,
+    "lon": -80.175468,
+    "displayName": "1045, Northeast 87th Street, Miami, Miami-Dade County, Florida, 33138, United States"
+  },
+  "capturedVia": "manual chat research (no API key)",
+  "organizations": [
+    {
+      "name": "Haitian Emmanuel Baptist Church Food Pantry",
+      "emoji": "🍽️",
+      "overview": "A community food pantry operated out of Haitian Emmanuel Baptist Church at 7321 NE 2nd Ave, Miami, FL 33138 — the same zip code as this address — providing emergency food assistance to low-income families, seniors, and the unemployed.",
+      "link": "https://www.7cups.com/local/us/fl/miami/food/food-pantry-8601169556",
+      "accomplishments": [],
+      "plannedActivities": [
+        {
+          "category": "justice",
+          "text": "Runs a weekly food distribution every Thursday at 12:00 PM, serving low-income families, seniors, disabled veterans, and the working poor in the immediate area.",
+          "link": "https://www.7cups.com/local/us/fl/miami/food/food-pantry-8601169556",
+          "linkLabel": "Food pantry listing",
+          "locality": "hyperlocal"
+        }
+      ]
+    }
+  ],
+  "reviewNotes": "Weakest sourcing of the four topics — the only citation is a directory listing, not a news article or the church's own site, so the underlying facts (hours, exact scope) are thinner than the other three drafts. Locality is genuinely hyperlocal (same zip, a specific street address, walkable distance), but this one needs a second, stronger source before it should be trusted at the same level as the historic-preservation or racial-justice findings — a good example of why locality and source quality are separate things to grade."
+}

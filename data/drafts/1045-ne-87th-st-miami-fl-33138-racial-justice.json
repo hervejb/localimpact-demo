@@ -1,0 +1,38 @@
+{
+  "query": "1045 NE 87th St, Miami, FL 33138",
+  "topic": "racial and community justice",
+  "capturedAt": "2026-08-15T00:00:00.000Z",
+  "capturedNear": {
+    "lat": 25.855548,
+    "lon": -80.175468,
+    "displayName": "1045, Northeast 87th Street, Miami, Miami-Dade County, Florida, 33138, United States"
+  },
+  "capturedVia": "manual chat research (no API key)",
+  "organizations": [
+    {
+      "name": "South Florida People of Color",
+      "emoji": "✊",
+      "overview": "South Florida People of Color (dba Miami Shores People of Color) is a 501(c)(3) racial healing organization founded in Miami Shores in 2015, running community dialogue programs to dismantle racism through open, personal interaction across racial and ethnic lines.",
+      "link": "https://southfloridapoc.org/",
+      "accomplishments": [
+        {
+          "category": "justice",
+          "text": "Has run community race-dialogue programming based in Miami Shores for 10 years (since 2015) — Unity360 Community Race Dialogues, Awkward Dinners, Redlining Tours, and a Racial Healing Book Club. The founder credits the group's early organizing on political representation with contributing to Miami Shores electing its first Black mayor three years later — the group's own characterization, not independently verified causation.",
+          "link": "https://www.wlrn.org/south-florida/2025-10-08/10-years-of-racial-healing-south-florida-people-of-color-builds-bridges-through-dialogue",
+          "linkLabel": "WLRN: 10 Years of Racial Healing",
+          "locality": "hyperlocal"
+        }
+      ],
+      "plannedActivities": [
+        {
+          "category": "justice",
+          "text": "Runs an annual Juneteenth event at Barry University drawing 150+ attendees, held for at least the last two years as of October 2025.",
+          "link": "https://www.wlrn.org/south-florida/2025-10-08/10-years-of-racial-healing-south-florida-people-of-color-builds-bridges-through-dialogue",
+          "linkLabel": "WLRN: 10 Years of Racial Healing",
+          "locality": "hyperlocal"
+        }
+      ]
+    }
+  ],
+  "reviewNotes": "The mayor-election claim needed care: the source article quotes the founder's own account ('Three years after the first meeting on political representation...Miami Shores got our first Black mayor') without naming the mayor or independently establishing causation. Wrote the bullet to attribute the claim to the founder rather than presenting it as an established fact — this is exactly the kind of claim that's easy to overstate if you only read a search snippet instead of the source."
+}

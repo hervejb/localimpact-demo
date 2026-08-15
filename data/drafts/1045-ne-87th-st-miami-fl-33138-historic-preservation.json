@@ -1,0 +1,61 @@
+{
+  "query": "1045 NE 87th St, Miami, FL 33138",
+  "topic": "historic preservation",
+  "capturedAt": "2026-08-15T00:00:00.000Z",
+  "capturedNear": {
+    "lat": 25.855548,
+    "lon": -80.175468,
+    "displayName": "1045, Northeast 87th Street, Miami, Miami-Dade County, Florida, 33138, United States"
+  },
+  "capturedVia": "manual chat research (no API key)",
+  "organizations": [
+    {
+      "name": "Dade Heritage Trust",
+      "emoji": "🏛️",
+      "overview": "Founded in 1972, Dade Heritage Trust is Miami-Dade County's largest historic preservation organization, working to preserve the county's architectural, environmental, and cultural heritage through education and advocacy.",
+      "link": "https://www.dadeheritagetrust.org/",
+      "accomplishments": [
+        {
+          "category": "justice",
+          "text": "Was awarded a Florida Division of Historical Resources Small Matching Grant specifically to conduct a comprehensive survey of El Portal's historic resources.",
+          "link": "https://grokipedia.com/page/El_Portal,_Florida",
+          "linkLabel": "El Portal historic resources survey",
+          "locality": "hyperlocal"
+        }
+      ],
+      "plannedActivities": []
+    },
+    {
+      "name": "Village of El Portal",
+      "emoji": "🏛️",
+      "overview": "El Portal is a small village in Miami-Dade County, home to the El Portal Archaeological Zone — a Tequesta Native American mound and settlement site dating to roughly 200-600 AD, the first archaeological site publicly recognized and preserved in Miami-Dade County (designated 1983).",
+      "link": "https://elportalvillage.com/",
+      "accomplishments": [
+        {
+          "category": "justice",
+          "text": "Officially designated the El Portal Seawall a historic site in 2008, recognizing it as a surviving example of early waterfront engineering tied to the village's development.",
+          "link": "https://www.easternengineeringgroup.com/engineering-legacy-on-the-little-river-the-history-and-structure-of-el-portals-historic-seawall/",
+          "linkLabel": "El Portal Seawall historic designation",
+          "locality": "hyperlocal"
+        }
+      ],
+      "plannedActivities": [
+        {
+          "category": "justice",
+          "text": "The Village Council is actively working to restore and protect the eroding Sherwood Forest archaeological mound, raised as a concern at a July 2024 council meeting alongside code enforcement issues in the area.",
+          "link": "https://thelocallens.org/el-portal-discusses-historic-mound-preservation-and-code-enforcement/",
+          "linkLabel": "LocalLens: El Portal mound preservation discussion",
+          "locality": "hyperlocal"
+        },
+        {
+          "category": "justice",
+          "text": "The Sherwood Forest Archaeological Training Field School is running a 2026 season at this exact site, per the Archaeological Institute of America's fieldwork bulletin.",
+          "link": "https://www.archaeological.org/fieldwork/sherwood-forest-archaeological-training-field-school/",
+          "linkLabel": "AIA Fieldwork Bulletin",
+          "locality": "hyperlocal"
+        }
+      ]
+    }
+  ],
+  "reviewNotes": "Strongest hyperlocal hit rate of the four topics tested. The mound/seawall are literally in El Portal, a village of ~2,300 people — small-village-scale civic topics beat watershed-scale environmental ones on the 10-mile test, as predicted. Note: 'Village of El Portal' is a municipal government, not a 501(c)(3) — included on the same precedent as NYC Planning/NYC Buildings appearing in the original curated dataset as legitimate civic orgs."
+}
