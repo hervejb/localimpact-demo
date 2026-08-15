@@ -56,6 +56,21 @@ const ORGS = {
     what:"The NYC Group runs outings, advocates at Community Boards and City Hall, and mobilizes members around local campaigns.",
     how:"Attend open monthly meetings, join a campaign committee, or volunteer for river monitoring.",
     link:"https://www.sierraclub.org/atlantic/nyc" },
+  sc_florida: { id:"sc_florida", name:"Sierra Club Florida", emoji:"🌿", shortDesc:"Statewide environmental advocacy in Florida",
+    about:"Sierra Club Florida is the state chapter covering Florida, organizing on coastal resilience, clean water, and public lands protection statewide.",
+    what:"The Chapter campaigns on wetlands and coastal protection, nuclear and utility oversight, and sea level rise adaptation through litigation, legislation, and coalition advocacy.",
+    how:"Join a local group, attend public comment periods on state and municipal proposals, or donate.",
+    link:"https://www.sierraclub.org/florida" },
+  sc_illinois: { id:"sc_illinois", name:"Sierra Club Illinois", emoji:"🌿", shortDesc:"Statewide environmental advocacy in Illinois",
+    about:"Sierra Club Illinois is the state chapter, a founding member of the Illinois Clean Jobs Coalition and active on clean energy, air quality, and water advocacy statewide.",
+    what:"The Chapter campaigns for clean energy legislation, coal and fossil fuel plant accountability, and clean water protections through coalition organizing and legislative advocacy.",
+    how:"Sign up for action alerts, join a local group, or volunteer for a campaign.",
+    link:"https://www.sierraclub.org/illinois" },
+  sc_ohio: { id:"sc_ohio", name:"Sierra Club Ohio", emoji:"🌿", shortDesc:"Statewide environmental advocacy in Ohio",
+    about:"Sierra Club Ohio is the state chapter, engaged in utility oversight at the Public Utilities Commission of Ohio and water quality advocacy around Lake Erie and its watershed.",
+    what:"The Chapter campaigns on utility rate cases, clean energy jobs, and agricultural runoff regulation through coalition advocacy and public utility proceedings.",
+    how:"Sign up for action alerts, testify at PUCO hearings, or volunteer for a campaign.",
+    link:"https://www.sierraclub.org/ohio" },
   weact: { id:"weact", name:"WE ACT for Env. Justice", emoji:"✊", shortDesc:"Environmental justice in Northern Manhattan",
     about:"WE ACT was founded in 1988 in West Harlem and is one of the oldest environmental justice organizations in the country.",
     what:"WE ACT organizes communities affected by pollution to demand policy change across air quality, climate resilience, and transportation equity.",
@@ -125,6 +140,9 @@ const CATEGORY_KEYWORDS = {
 const ORG_KEYWORDS = {
   sc_atlantic:    ["sierra club", "public lands", "regional advocacy", "litigation"],
   sc_nyc:         ["sierra club", "nyc group", "manhattan", "local advocacy"],
+  sc_florida:     ["sierra club", "florida", "sierra club florida"],
+  sc_illinois:    ["sierra club", "illinois", "sierra club illinois"],
+  sc_ohio:        ["sierra club", "ohio", "sierra club ohio"],
   weact:          ["environmental justice", "harlem", "we act", "asthma", "air quality"],
   ny_renews:      ["clean energy", "climate justice", "renewable", "coalition", "clcpa"],
   riverside_park: ["riverside park", "park", "green space", "waterfront"],
@@ -162,7 +180,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club: Turkey Point Coalition",
         "group": "sc_supported",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       },
       {
         "summary": "Won a federal court ruling keeping Florida's wetlands in federal hands, protecting your flood buffer.",
@@ -174,7 +192,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Florida",
         "group": "sc_supported",
         "category": "land",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       },
       {
         "summary": "Pushed Miami Beach to adopt a formal Sea Level Rise Adaptation Plan covering your streets and property.",
@@ -186,7 +204,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Miami Group",
         "group": "sc_only",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       }
     ],
     "inProgress": [
@@ -200,7 +218,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Stop the Dredge Campaign",
         "group": "sc_supported",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       },
       {
         "summary": "Fighting federal rollbacks that would eliminate the climate protections Miami Beach depends on.",
@@ -212,7 +230,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Florida",
         "group": "sc_supported",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       }
     ],
     "involved": [
@@ -229,7 +247,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sign the Petition",
         "group": "other",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       },
       {
         "summary": "Show up to Miami-Dade County commission meetings when coastal permits are on the agenda.",
@@ -245,7 +263,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Miami \u2014 Get Involved",
         "group": "sc_only",
         "category": "justice",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       },
       {
         "summary": "Donate to Miami Waterkeeper, who tests your beach water every Thursday and leads the reef lawsuit.",
@@ -260,7 +278,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Donate to Miami Waterkeeper",
         "group": "other",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       }
     ]
   },
@@ -283,7 +301,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club: Turkey Point Coalition",
         "group": "sc_supported",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       },
       {
         "summary": "Supported Everglades restoration advocacy that protects the water system filtering your drinking water.",
@@ -295,7 +313,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Everglades Coalition",
         "group": "sc_supported",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       }
     ],
     "inProgress": [
@@ -309,7 +327,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Miami Waterkeeper \u2014 Turkey Point",
         "group": "sc_supported",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       }
     ],
     "involved": [
@@ -326,7 +344,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Miami Waterkeeper",
         "group": "other",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       },
       {
         "summary": "Join Sierra Club Miami Group to stay informed and participate in local advocacy.",
@@ -341,7 +359,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Miami \u2014 Get Involved",
         "group": "sc_only",
         "category": "justice",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       },
       {
         "summary": "Contact your Miami-Dade County commissioner to ask about aquifer monitoring near Turkey Point.",
@@ -356,7 +374,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Miami-Dade Commission",
         "group": "other",
         "category": "justice",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       }
     ]
   },
@@ -379,7 +397,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club: Beyond Coal Illinois",
         "group": "sc_supported",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_illinois"
       },
       {
         "summary": "Helped pass Illinois' Climate and Equitable Jobs Act, putting your electricity on a legally mandated path to clean energy.",
@@ -391,7 +409,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club: Illinois CEJA Victory",
         "group": "sc_only",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_illinois"
       },
       {
         "summary": "Won a lawsuit requiring Chicago's water agency to stop dumping partially treated sewage into the river system.",
@@ -403,7 +421,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Chicago Group",
         "group": "sc_supported",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_illinois"
       }
     ],
     "inProgress": [
@@ -417,7 +435,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Illinois",
         "group": "sc_supported",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_illinois"
       },
       {
         "summary": "Defending CEJA implementation funding from federal rollbacks that would slow Illinois' clean energy transition.",
@@ -429,7 +447,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Illinois",
         "group": "sc_supported",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_illinois"
       }
     ],
     "involved": [
@@ -446,7 +464,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Illinois \u2014 Take Action",
         "group": "sc_only",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_illinois"
       },
       {
         "summary": "Volunteer with Sierra Club Chicago Group's river water monitoring program.",
@@ -461,7 +479,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Chicago Group",
         "group": "sc_only",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_illinois"
       },
       {
         "summary": "Support LVEJO and PERRO, the South Side organizations whose community leadership Sierra Club follows.",
@@ -476,7 +494,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "LVEJO.org",
         "group": "other",
         "category": "justice",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_illinois"
       }
     ]
   },
@@ -498,7 +516,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Ohio",
         "group": "sc_supported",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_ohio"
       },
       {
         "summary": "Advocated for Lake Erie clean water protections that safeguard Cuyahoga County's drinking water source.",
@@ -510,7 +528,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Ohio",
         "group": "sc_supported",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_ohio"
       }
     ],
     "inProgress": [
@@ -524,7 +542,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Ohio",
         "group": "sc_supported",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_ohio"
       },
       {
         "summary": "Pushing PUCO to distribute the $250 million FirstEnergy penalty fairly to Brecksville ratepayers.",
@@ -536,7 +554,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "PUCO.ohio.gov",
         "group": "sc_supported",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_ohio"
       }
     ],
     "involved": [
@@ -553,7 +571,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Ohio \u2014 Take Action",
         "group": "sc_only",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_ohio"
       },
       {
         "summary": "Check your ratepayer refund status and submit comments to PUCO on the distribution process.",
@@ -568,7 +586,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "PUCO \u2014 Consumer Information",
         "group": "other",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_ohio"
       }
     ]
   },
@@ -1819,6 +1837,12 @@ export default function App() {
   const items                = [...staticItems, ...(liveResults[activeTab] || [])];
   const currentNeighborhood = NYC_LOCATIONS.find(l => l.zip === zip);
   const hasPrefs            = interests.categories.length > 0 || interests.orgs.length > 0;
+  // A search that matched none of the 4 curated categories AND came back
+  // empty from live search would otherwise silently fall through to
+  // showing every story, unfiltered — indistinguishable from never having
+  // searched at all. Surface that honestly instead of pretending nothing happened.
+  const searchedNothingSpecific = !!interests.query?.trim() && !hasPrefs &&
+    liveResults.delivered.length === 0 && liveResults.inProgress.length === 0;
 
   const locationLabel = geo.status === "locating" ? "Finding your location…" : (currentNeighborhood?.label || locData.location);
   const locationSub   = geo.status === "locating" ? null : (currentNeighborhood?.sub || null);
@@ -1873,6 +1897,11 @@ export default function App() {
         </div>
 
         <div style={{ flex:1, overflowY:"auto", padding:"16px 20px 32px" }}>
+          {searchedNothingSpecific && (
+            <div style={{ background:C.greenLight, border:`1px solid ${C.borderGreen}`, borderRadius:12, padding:"10px 14px", marginBottom:14, fontSize:12, color:C.textMid, lineHeight:1.4 }}>
+              Nothing specific found for "{interests.query.length > 50 ? interests.query.slice(0, 50) + "…" : interests.query}" yet — showing everything happening near you instead.
+            </div>
+          )}
           <CategoryGroupedList items={items} tense={tab.tense} tabId={activeTab} interests={interests} onOrgClick={setActiveOrg} />
         </div>
 
