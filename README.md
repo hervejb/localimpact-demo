@@ -2,7 +2,9 @@
 
 **Who's been fighting for where you live.**
 
-A mobile-first web app that surfaces what environmental advocacy organizations have done for specific neighborhoods — what they've won, what's in progress, and how you can get involved.
+A mobile-first web app that surfaces what nonprofit and civic organizations
+have won or are actively fighting for, right where you are — searched live,
+every time, for any location on Earth.
 
 ## Live Demo
 
@@ -10,36 +12,43 @@ Deployed at: *(your Vercel URL goes here)*
 
 ## Features
 
-- 📍 Senses your real location via the browser Geolocation API and jumps to
-  the nearest covered area (falls back to Upper West Side, Manhattan if
-  location is denied or unsupported). Tap the location line to type or
-  dictate a different address/city/zip, or revert to your current location.
-  A typed location is matched locally first; if it isn't one of the 13
-  curated neighborhoods (e.g. "Fort Lauderdale"), it's geocoded via a free
-  OpenStreetMap Nominatim lookup (`api/geocode.js`) and snapped to the
-  nearest covered area, the same way GPS sensing works.
+- 📍 Senses your real location via the browser Geolocation API and reverse-
+  geocodes it to a real place name — no fixed list of covered areas, no
+  snapping to the nearest of a handful of cities. Tap the location line to
+  type or dictate any address, city, or neighborhood instead, or revert to
+  your current location.
+- 🔎 **Every result is a live, web-search-grounded lookup** — there's no
+  curated dataset behind this app. Landing on a location (or changing it)
+  searches for real organizations working there across environmental
+  health, climate, land, and community/justice; saving "what do you care
+  about" narrows that same live search to your specific topic. See **How
+  Search Works** below.
 - 💾 A manually chosen location and your saved "what do you care about"
   criteria persist in `localStorage` and stay in effect until you change
   them again — surviving page reloads instead of silently resetting.
 - 🗂 Two tabs: **Won for you** (completed wins) and **Fighting for you**
   (active campaigns and concrete ways to help)
 - 🏷 Issue categories: Environmental Health, Climate & Energy, Land & Green Space, Community & Justice
-- 🏢 One link per story: the organization's name, tap to open its profile
+- 🏢 One link per story: the organization's name, tap to open its profile,
+  plus a source citation link on every claim
 - ⚙️ **Preferences** — say what you care about, in your own words, typed or
-  dictated. It's matched locally against the curated dataset instantly, and
-  in parallel a live, web-search-grounded lookup runs for the same topic at
-  your location (see **Live Search** below) — so a topic outside the
-  curated categories still returns something instead of nothing.
+  dictated. Also narrows which categories are shown among whatever the live
+  search already returned, entirely client-side.
 
-## Live Search ("ask anything, anywhere")
+## How Search Works
 
-The curated dataset only covers 4 topics across 13 locations. Typing a topic
-that isn't in it (e.g. "racial justice" somewhere with no curated coverage)
-calls `api/search.js`, a Vercel serverless function that asks Claude —
-grounded with real web search, never fabricating — which real organizations
-have worked on that topic near that location, shaped to fit the app's UI.
-Live results are labeled "Found via live search — verify before relying on
-this" so they're never confused with the editorially curated content.
+`api/search.js` asks Claude — grounded with real web search, never
+fabricating — which real organizations have won or are fighting for a given
+topic near a given place, structured as: an overview of who the org is,
+2-3 specific, individually-cited accomplishments, and individually-cited
+planned activities with their proposed impact. Every claim carries a real
+source link. Results are labeled "🔎 Found via live search — verify before
+relying on this."
+
+Landing on a location without a specific topic set runs a default broad
+query (environmental health, climate, land, and community/justice) so the
+tabs aren't empty on first load. Saving a specific topic in Preferences
+re-runs the search scoped to exactly that.
 
 **To enable the Claude-powered version:** set `ANTHROPIC_API_KEY` as an
 environment variable in the Vercel project (Project Settings → Environment
@@ -58,24 +67,24 @@ name/registry search rather than a topic search, so results are framed as
 about what the org has done — there's no filing data to back up an impact
 claim, so none is made.
 
-## Locations Covered
+Since every location and every topic change is now a real, billed API call
+once a key is set, `api/search.js` should not be exposed to public,
+unlimited traffic without a rate limit and a spending cap set in the
+Anthropic Console — neither is built yet.
 
-**Manhattan:** Chelsea · Lower East Side / Chinatown · Tribeca / Financial District ·
-West Village / Greenwich Village · Upper West Side · East Harlem ·
-Harlem · Upper East Side · Yorkville / Carnegie Hill
+## Location Resolution
 
-**Elsewhere:** Miami Beach, FL · Miami Shores, FL · Hyde Park (Chicago), IL · Brecksville, OH
-
-Coverage is intentionally small for this demo — sensing your location always
-snaps to whichever of these is nearest, and shows the distance so it's never
-misleading about how close that actually is.
+`api/geocode.js` proxies OpenStreetMap's free Nominatim service in two
+modes: forward (typed text → coordinates + a place name) and reverse
+(GPS coordinates → a place name). There's no coverage limit — any location
+on Earth that Nominatim can resolve works.
 
 ## Tech Stack
 
 - React 18
 - Vite
-- `api/search.js` — a Vercel serverless function using the Anthropic SDK for the live search feature, with a free ProPublica-backed fallback when no key is set
-- `api/geocode.js` — a Vercel serverless function proxying OpenStreetMap Nominatim for free geocoding of typed locations
+- `api/search.js` — a Vercel serverless function using the Anthropic SDK for live organization search, with a free ProPublica-backed fallback when no key is set
+- `api/geocode.js` — a Vercel serverless function proxying OpenStreetMap Nominatim for free forward/reverse geocoding
 - Deployed on Vercel
 
 ## Development
@@ -84,6 +93,10 @@ misleading about how close that actually is.
 npm install
 npm run dev
 ```
+
+Note: `/api/*` functions aren't served by `vite dev` — local development
+needs `vercel dev`, or a deployed preview, to see live search and geocoding
+actually run.
 
 ## Deployment
 
