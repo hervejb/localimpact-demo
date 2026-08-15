@@ -141,23 +141,20 @@ async function reverseGeocodeLocation(lat, lon) {
   }
 }
 
-// The default topic used to populate the tabs when no specific "what do you
-// care about" query has been set — a broad ask covering the app's whole
-// scope, so simply arriving at a location returns something instead of a
-// blank screen. A specific typed topic (via Preferences) replaces this.
-const DEFAULT_TOPIC = "environmental health, climate and energy, land and green space, and community or racial justice";
-
 // Calls the /api/search serverless function — every location and topic is a
-// live, web-search-grounded lookup, every time, no static dataset. Never
-// throws: a missing API key, a network error, or a bad response all resolve
-// to an empty result, so the caller can always just await it.
+// live, web-search-grounded lookup, every time, no static dataset. The
+// default — no topic typed yet — is just the location itself: search
+// whatever's notable there, the way a search engine would, rather than
+// presupposing a fixed set of categories to look for. Never throws: a
+// missing API key, a network error, or a bad response all resolve to an
+// empty result, so the caller can always just await it.
 async function searchLive(topic, locationLabel) {
   const empty = { delivered: [], inProgress: [] };
   try {
     const res = await fetch("/api/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ topic: topic || DEFAULT_TOPIC, locationLabel }),
+      body: JSON.stringify({ topic, locationLabel }),
     });
     if (!res.ok) return empty;
     const data = await res.json();

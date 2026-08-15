@@ -1,14 +1,17 @@
 // Vercel serverless function — the "underlying prompt that generates data."
 //
-// Given a topic and a location, asks Claude (grounded with live web search)
-// which real organizations have worked on that topic there, and returns it
-// shaped to exactly what the UI's StoryCard/OrgSheet components need.
+// Given a location, and optionally a topic, asks Claude (grounded with live
+// web search) which real organizations have notable impact there, and
+// returns it shaped to exactly what the UI's StoryCard/OrgSheet components
+// need. No topic means "what's notable here" — location is the only
+// required input; every call is a fresh, live lookup, not a cached dataset.
 //
 // Requires ANTHROPIC_API_KEY set as an environment variable in the Vercel
 // project (Project Settings -> Environment Variables). Never exposed to the
 // client — this file only runs server-side. If the key isn't set, or the
 // call fails for any reason, this returns an empty result rather than an
-// error, so the app just falls back to whatever's in the static dataset.
+// error, so the app degrades to the ProPublica fallback (topic only) or
+// simply shows nothing.
 
 const Anthropic = require("@anthropic-ai/sdk");
 
@@ -100,6 +103,10 @@ function stateCodeFromLabel(locationLabel) {
 }
 
 async function searchProPublica(topic, locationLabel) {
+  // ProPublica only supports a name/keyword search, not a "browse everything
+  // near here" query — with no topic to search by, there's nothing sensible
+  // to ask it. An empty result here is honest, not a failure.
+  if (!topic) return [];
   const state = stateCodeFromLabel(locationLabel);
   const url = `https://projects.propublica.org/nonprofits/api/v2/search.json?q=${encodeURIComponent(topic)}${state ? `&state[id]=${state}` : ""}`;
   const response = await fetch(url);
@@ -131,7 +138,7 @@ async function searchProPublica(topic, locationLabel) {
 }
 
 function systemPrompt() {
-  return `You are a careful local-impact researcher for a civic app. Given a topic and a place, use web search to identify REAL, VERIFIABLE non-profit organizations, grassroots groups, or regional coalitions working on that topic in that place.
+  return `You are a careful local-impact researcher for a civic app. Given a place, and optionally a topic, use web search to identify REAL, VERIFIABLE non-profit organizations, grassroots groups, or regional coalitions with notable impact there. If no topic is given, cover a genuine range of causes there rather than fixating on one.
 
 For each organization, structure your findings as:
 - overview: a 1-2 sentence description of who they are and their core mission in this region.
@@ -159,9 +166,12 @@ module.exports = async (req, res) => {
   }
   const topic = (body && body.topic || "").toString().trim().slice(0, 300);
   const locationLabel = (body && body.locationLabel || "").toString().trim().slice(0, 200);
-  const zip = (body && body.zip || "").toString().trim().slice(0, 20);
 
-  if (!topic) {
+  // Location is the one thing every search is anchored to — the default,
+  // with no topic typed, is simply "what's notable here," the way arriving
+  // somewhere with a search engine and no query in mind still shows results
+  // for that place. A topic narrows it; it's never required to search at all.
+  if (!locationLabel) {
     res.status(200).json({ items: [] });
     return;
   }
@@ -191,7 +201,9 @@ module.exports = async (req, res) => {
       messages: [
         {
           role: "user",
-          content: `Please research and identify non-profit organizations, grassroots groups, or regional coalitions working on the following topic(s): ${topic}, within the following geographical area: ${locationLabel || "unknown"}${zip ? ` (${zip})` : ""}.`,
+          content: topic
+            ? `Please research and identify non-profit organizations, grassroots groups, or regional coalitions working on the following topic(s): ${topic}, within the following geographical area: ${locationLabel}.`
+            : `Please research and identify non-profit organizations, grassroots groups, or regional coalitions with notable recent impact within the following geographical area: ${locationLabel}. Cover a genuine range of causes there rather than fixating on one.`,
         },
       ],
     });
