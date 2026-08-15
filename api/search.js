@@ -1,17 +1,20 @@
 // Vercel serverless function — the "underlying prompt that generates data."
 //
-// Given a location, and optionally a topic, asks Claude (grounded with live
+// Given a location, and optionally a topic, asks an LLM (grounded with live
 // web search) which real organizations have notable impact there, and
 // returns it shaped to exactly what the UI's StoryCard/OrgSheet components
 // need. No topic means "what's notable here" — location is the only
 // required input; every call is a fresh, live lookup, not a cached dataset.
 //
-// Requires ANTHROPIC_API_KEY set as an environment variable in the Vercel
-// project (Project Settings -> Environment Variables). Never exposed to the
-// client — this file only runs server-side. If the key isn't set, or the
-// call fails for any reason, this returns an empty result rather than an
-// error, so the app degrades to the ProPublica fallback (topic only) or
-// simply shows nothing.
+// Three tiers, tried in order, first configured key wins:
+//   1. ANTHROPIC_API_KEY — Claude, paid, the richest results.
+//   2. GEMINI_API_KEY    — Gemini, free tier, still a real grounded search.
+//   3. (neither set)     — ProPublica registry search, free, no key, but
+//                          name/keyword search only — the last resort.
+// Set either key as a Vercel environment variable (Project Settings ->
+// Environment Variables). Never exposed to the client — this file only runs
+// server-side. Any failure at any tier resolves to an empty result rather
+// than an error, so the app degrades gracefully rather than breaking.
 
 const Anthropic = require("@anthropic-ai/sdk");
 
@@ -172,6 +175,52 @@ Rules:
 - Prefer local or regional organizations over large national ones when both exist for the same topic and place.`;
 }
 
+function userPrompt(topic, locationLabel) {
+  return topic
+    ? `Please research and identify non-profit organizations, grassroots groups, or regional coalitions working on the following topic(s): ${topic}, within the following geographical area: ${locationLabel}.`
+    : `Please research and identify non-profit organizations, grassroots groups, or regional coalitions with notable recent impact within the following geographical area: ${locationLabel}. Cover a genuine range of causes there rather than fixating on one.`;
+}
+
+// Free-tier alternative to Claude, used when ANTHROPIC_API_KEY isn't set but
+// GEMINI_API_KEY is — a real, grounded search (not the thin ProPublica
+// registry fallback below), backed by a free Google AI Studio key. Uses the
+// Gemini API's "Interactions" endpoint directly over REST (no SDK) since
+// that's what Google's current docs describe: POST /v1beta/interactions,
+// system_instruction + input for the prompt, tools:[{type:"google_search"}]
+// for grounding, response_format for schema-constrained JSON output. The
+// final text lives in the "model_output" step's content. Never throws: any
+// unexpected shape or failure resolves to an empty organizations array, same
+// fail-open contract as the Claude path.
+async function searchGemini(apiKey, topic, locationLabel) {
+  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+    body: JSON.stringify({
+      model: "gemini-3.6-flash",
+      system_instruction: systemPrompt(),
+      input: userPrompt(topic, locationLabel),
+      tools: [{ type: "google_search" }],
+      response_format: { type: "text", mime_type: "application/json", schema: RESULT_SCHEMA },
+    }),
+  });
+  if (!response.ok) return [];
+  const data = await response.json();
+  const steps = Array.isArray(data.steps) ? data.steps : [];
+  const modelOutput = steps.find(s => s.type === "model_output");
+  const textPart = modelOutput && Array.isArray(modelOutput.content)
+    ? modelOutput.content.find(c => c.type === "text")
+    : null;
+  if (!textPart || !textPart.text) return [];
+  let parsed;
+  try {
+    parsed = JSON.parse(textPart.text);
+  } catch {
+    return [];
+  }
+  const organizations = Array.isArray(parsed.organizations) ? parsed.organizations : [];
+  return orgsToItems(organizations);
+}
+
 module.exports = async (req, res) => {
   if (req.method !== "POST") {
     res.status(405).json({ items: [] });
@@ -194,13 +243,55 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    // No Claude key configured — fall back to a free, no-key data source so
-    // testers without your key still see something real, instead of just
-    // an empty result.
+  // Three tiers, best to weakest: Claude (paid, richest, if configured) ->
+  // Gemini (free-tier, still a real grounded search, if configured) ->
+  // ProPublica (free, no key, name-search only — the last resort).
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY;
+
+  if (anthropicKey) {
     try {
-      const items = await searchProPublica(topic, locationLabel);
+      const client = new Anthropic({ apiKey: anthropicKey });
+      const response = await client.messages.create({
+        model: "claude-opus-5",
+        max_tokens: 8192,
+        system: systemPrompt(),
+        tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 12 }],
+        output_config: { format: { type: "json_schema", schema: RESULT_SCHEMA } },
+        messages: [{ role: "user", content: userPrompt(topic, locationLabel) }],
+      });
+
+      if (response.stop_reason === "refusal") {
+        res.status(200).json({ items: [] });
+        return;
+      }
+
+      const textBlocks = (response.content || []).filter(b => b.type === "text");
+      const lastText = textBlocks.length ? textBlocks[textBlocks.length - 1].text : null;
+      if (!lastText) {
+        res.status(200).json({ items: [] });
+        return;
+      }
+
+      let parsed;
+      try {
+        parsed = JSON.parse(lastText);
+      } catch {
+        res.status(200).json({ items: [] });
+        return;
+      }
+
+      const organizations = Array.isArray(parsed.organizations) ? parsed.organizations : [];
+      res.status(200).json({ items: orgsToItems(organizations) });
+    } catch (err) {
+      res.status(200).json({ items: [] });
+    }
+    return;
+  }
+
+  if (geminiKey) {
+    try {
+      const items = await searchGemini(geminiKey, topic, locationLabel);
       res.status(200).json({ items });
     } catch {
       res.status(200).json({ items: [] });
@@ -208,47 +299,13 @@ module.exports = async (req, res) => {
     return;
   }
 
+  // No key configured at all — fall back to a free, no-key data source so
+  // testers without any key still see something real, instead of just an
+  // empty result.
   try {
-    const client = new Anthropic({ apiKey });
-    const response = await client.messages.create({
-      model: "claude-opus-5",
-      max_tokens: 8192,
-      system: systemPrompt(),
-      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 12 }],
-      output_config: { format: { type: "json_schema", schema: RESULT_SCHEMA } },
-      messages: [
-        {
-          role: "user",
-          content: topic
-            ? `Please research and identify non-profit organizations, grassroots groups, or regional coalitions working on the following topic(s): ${topic}, within the following geographical area: ${locationLabel}.`
-            : `Please research and identify non-profit organizations, grassroots groups, or regional coalitions with notable recent impact within the following geographical area: ${locationLabel}. Cover a genuine range of causes there rather than fixating on one.`,
-        },
-      ],
-    });
-
-    if (response.stop_reason === "refusal") {
-      res.status(200).json({ items: [] });
-      return;
-    }
-
-    const textBlocks = (response.content || []).filter(b => b.type === "text");
-    const lastText = textBlocks.length ? textBlocks[textBlocks.length - 1].text : null;
-    if (!lastText) {
-      res.status(200).json({ items: [] });
-      return;
-    }
-
-    let parsed;
-    try {
-      parsed = JSON.parse(lastText);
-    } catch {
-      res.status(200).json({ items: [] });
-      return;
-    }
-
-    const organizations = Array.isArray(parsed.organizations) ? parsed.organizations : [];
-    res.status(200).json({ items: orgsToItems(organizations) });
-  } catch (err) {
+    const items = await searchProPublica(topic, locationLabel);
+    res.status(200).json({ items });
+  } catch {
     res.status(200).json({ items: [] });
   }
 };

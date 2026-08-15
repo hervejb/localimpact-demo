@@ -37,7 +37,7 @@ Deployed at: *(your Vercel URL goes here)*
 
 ## How Search Works
 
-`api/search.js` asks Claude — grounded with real web search, never
+`api/search.js` asks an LLM — grounded with real web search, never
 fabricating — which real organizations have won or are fighting for a given
 topic near a given place, structured as: an overview of who the org is,
 2-3 specific, individually-cited accomplishments, and individually-cited
@@ -45,32 +45,38 @@ planned activities with their proposed impact. Every claim carries a real
 source link. Results are labeled "🔎 Found via live search — verify before
 relying on this."
 
-Landing on a location without a specific topic set runs a default broad
-query (environmental health, climate, land, and community/justice) so the
-tabs aren't empty on first load. Saving a specific topic in Preferences
-re-runs the search scoped to exactly that.
+Landing on a location without a specific topic set searches "what's notable
+here" rather than presupposing a topic, so the tabs aren't empty on first
+load. Saving a specific topic in Preferences re-runs the search scoped to
+exactly that.
 
-**To enable the Claude-powered version:** set `ANTHROPIC_API_KEY` as an
-environment variable in the Vercel project (Project Settings → Environment
-Variables), using a key from [the Anthropic Console](https://console.anthropic.com/).
-It only runs server-side; the key is never sent to the browser. There's no
-local equivalent for `vite dev` — the serverless function only exists once
-deployed to Vercel (or run via `vercel dev`), so local development always
-sees the fallback below.
+Three tiers, tried in order — the first configured key wins:
 
-**Without a key** (e.g. for testers you invite who don't have your key),
-`api/search.js` automatically falls back to
-[ProPublica's Nonprofit Explorer API](https://projects.propublica.org/nonprofits/api/) —
-free, no key required, and backed by real IRS nonprofit filings. It's a
-name/registry search rather than a topic search, so results are framed as
-"a registered nonprofit near you, worth looking into" rather than any claim
-about what the org has done — there's no filing data to back up an impact
-claim, so none is made.
+1. **`ANTHROPIC_API_KEY`** (paid) — Claude, the richest results. Set as an
+   environment variable in the Vercel project (Project Settings →
+   Environment Variables), using a key from
+   [the Anthropic Console](https://console.anthropic.com/). **Set a spending
+   limit there (Settings → Billing/Limits) before you set the key** — every
+   location and topic change becomes a real, billed call, and there's no
+   in-app rate limit yet.
+2. **`GEMINI_API_KEY`** (free tier) — Gemini, still a real search-grounded
+   lookup, just via Google's free tier instead of a paid Claude key. Get one
+   from [Google AI Studio](https://aistudio.google.com/apikey), set it the
+   same way in Vercel. Subject to Google's free-tier rate/quota limits,
+   which can be tighter than what a real testing session needs.
+3. **Neither set** — falls back to
+   [ProPublica's Nonprofit Explorer API](https://projects.propublica.org/nonprofits/api/) —
+   free, no key required, backed by real IRS nonprofit filings, but a
+   name/registry search rather than a topic search. Results are framed as
+   "a registered nonprofit near you, worth looking into" rather than any
+   claim about what the org has done — there's no filing data to back up an
+   impact claim, so none is made. Only works when a topic is typed; a
+   topic-less "what's notable here" search has nothing sensible to ask it.
 
-Since every location and every topic change is now a real, billed API call
-once a key is set, `api/search.js` should not be exposed to public,
-unlimited traffic without a rate limit and a spending cap set in the
-Anthropic Console — neither is built yet.
+Both `ANTHROPIC_API_KEY` and `GEMINI_API_KEY` only run server-side — never
+exposed to the browser. There's no local equivalent for `vite dev` — the
+serverless function only exists once deployed to Vercel (or run via
+`vercel dev`), so local development always sees the ProPublica fallback.
 
 ## Location Resolution
 
@@ -83,7 +89,7 @@ on Earth that Nominatim can resolve works.
 
 - React 18
 - Vite
-- `api/search.js` — a Vercel serverless function using the Anthropic SDK for live organization search, with a free ProPublica-backed fallback when no key is set
+- `api/search.js` — a Vercel serverless function for live organization search: Claude (Anthropic SDK) → Gemini (REST) → ProPublica (free, no key), in that order
 - `api/geocode.js` — a Vercel serverless function proxying OpenStreetMap Nominatim for free forward/reverse geocoding
 - Deployed on Vercel
 
