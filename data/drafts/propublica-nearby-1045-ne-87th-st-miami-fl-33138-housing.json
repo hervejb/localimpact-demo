@@ -1,0 +1,39 @@
+{
+  "query": "1045 NE 87th St, Miami, FL 33138",
+  "topic": "housing",
+  "radiusMiles": 10,
+  "capturedAt": "2026-08-15T19:06:44.621Z",
+  "capturedNear": {
+    "lat": 25.855548,
+    "lon": -80.175468,
+    "displayName": "1045, Northeast 87th Street, Miami, Miami-Dade County, Florida, 33138, United States"
+  },
+  "statewideCandidateCount": 25,
+  "checkedCount": 20,
+  "nearbyOrganizations": [
+    {
+      "ein": 611665354,
+      "name": "Housing Programs Inc",
+      "address": "16499 NE 19TH AVE",
+      "city": "North Miami Beach",
+      "state": "FL",
+      "zip": "33162",
+      "distanceMiles": 5.1,
+      "nteeCode": "L25",
+      "link": "https://projects.propublica.org/nonprofits/organizations/611665354",
+      "addressConfidence": "normal"
+    },
+    {
+      "ein": 932806869,
+      "name": "Caroline Housing",
+      "address": "PO BOX 381933",
+      "city": "Miami",
+      "state": "FL",
+      "zip": "33238",
+      "distanceMiles": 5.7,
+      "nteeCode": "P20",
+      "link": "https://projects.propublica.org/nonprofits/organizations/932806869",
+      "addressConfidence": "low (PO Box — not a real street presence)"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "query": "1045 NE 87th St, Miami, FL 33138",
+  "topic": "affordable housing",
+  "capturedAt": "2026-08-15T00:00:00.000Z",
+  "capturedNear": {
+    "lat": 25.855548,
+    "lon": -80.175468,
+    "displayName": "1045, Northeast 87th Street, Miami, Miami-Dade County, Florida, 33138, United States"
+  },
+  "capturedVia": "manual chat research (no API key)",
+  "organizations": [],
+  "reviewNotes": "No hyperlocal organizations or claims found for this topic at this address, despite two separate search attempts (general housing orgs, and a specific Miami Shores/El Portal rezoning-fight search). Only regional resources turned up: Neighborhood Housing Services of South Florida (Miami-Dade + Broward-wide) and Florida Non-Profit Housing (statewide). This is an honest empty/regional-only result, not a search failure — same pattern as the earlier 'clean water' test. Housing fights tend to be tied to a specific stalled development or rezoning fight; none is currently active and visible for this exact area, unlike the historic-preservation and racial-justice topics which had standing local institutions to find."
+}

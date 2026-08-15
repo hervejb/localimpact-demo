@@ -1,0 +1,13 @@
+{
+  "query": "1045 NE 87th St, Miami, FL 33138",
+  "topic": "clean water",
+  "capturedAt": "2026-08-15T00:00:00.000Z",
+  "capturedNear": {
+    "lat": 25.855548,
+    "lon": -80.175468,
+    "displayName": "1045, Northeast 87th Street, Miami, Miami-Dade County, Florida, 33138, United States"
+  },
+  "capturedVia": "manual chat research (no API key), retested against locality grading, then retested again against currency/recency verification",
+  "organizations": [],
+  "reviewNotes": "CORRECTED after a recency check: this draft previously included two Miami Waterkeeper claims (a 2013 legal-standing 'win' and an 'ongoing opposition' to Miami-Dade's $12.6B water/sewer plan), both sourced from a single Miami New Times article. Verifying the article's actual publish date found it was from May 2013 — 13 years old, not current. Further research found the underlying lawsuit was resolved via a federal consent decree, and Miami Waterkeeper's later motion to reopen the case was denied. Presenting either claim as a current 'win benefiting you now' or 'fight that will benefit you if it succeeds' would have been wrong, not just stale. Both removed. Correct result for this topic/address/currency bar: honestly empty, not a search failure — the earlier 'regional, not hyperlocal' grade undersold how weak this particular find actually was."
+}

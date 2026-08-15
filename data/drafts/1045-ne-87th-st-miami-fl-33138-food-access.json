@@ -1,0 +1,30 @@
+{
+  "query": "1045 NE 87th St, Miami, FL 33138",
+  "topic": "food access and food insecurity",
+  "capturedAt": "2026-08-15T00:00:00.000Z",
+  "capturedNear": {
+    "lat": 25.855548,
+    "lon": -80.175468,
+    "displayName": "1045, Northeast 87th Street, Miami, Miami-Dade County, Florida, 33138, United States"
+  },
+  "capturedVia": "manual chat research (no API key)",
+  "organizations": [
+    {
+      "name": "Haitian Emmanuel Baptist Church Food Pantry",
+      "emoji": "🍽️",
+      "overview": "A community food pantry operated out of Haitian Emmanuel Baptist Church at 7321 NE 2nd Ave, Miami, FL 33138 — the same zip code as this address — providing emergency food assistance to low-income families, seniors, and the unemployed.",
+      "link": "https://www.7cups.com/local/us/fl/miami/food/food-pantry-8601169556",
+      "accomplishments": [],
+      "plannedActivities": [
+        {
+          "category": "justice",
+          "text": "Runs a weekly food distribution serving low-income families, seniors, disabled veterans, and the working poor in the immediate area. Exact hours unconfirmed — one directory lists Thursday 12:00 PM, another lists Saturday 11:00 AM-5:00 PM, and both explicitly warn that pantry hours change without notice to directories. Call (305) 757-7515 to confirm before relying on either.",
+          "link": "https://www.7cups.com/local/us/fl/miami/food/food-pantry-8601169556",
+          "linkLabel": "Food pantry listing (hours unconfirmed — see note)",
+          "locality": "hyperlocal"
+        }
+      ]
+    }
+  ],
+  "reviewNotes": "A recency check surfaced a real conflict, not just thin sourcing: a second directory (foodbanksinflorida.org) gives completely different hours (Saturday 11am-5pm) than the first (Thursday noon). Rather than pick one arbitrarily or drop the finding, kept it but rewrote the claim to state the conflict honestly and point to the phone number to confirm — the org and its existence are real and locally verified twice over, but the specific operating hours are not something this app should assert with confidence right now."
+}

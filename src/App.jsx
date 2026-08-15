@@ -1,44 +1,48 @@
-import { useState, createContext, useContext } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
+
+// Shared category palette — vivid, distinct hues so a category reads by
+// color alone at a glance, and stays constant no matter which skin is active.
+const CATEGORIES = [
+  { id: "env_health", label: "Environmental Health", icon: "🌬️", color: "#0D9488", bg: "#CCFBF1", border: "#5EEAD4" },
+  { id: "climate",    label: "Climate & Energy",     icon: "⚡",  color: "#EA580C", bg: "#FFEDD5", border: "#FDBA74" },
+  { id: "land",       label: "Land & Green Space",   icon: "🌳", color: "#16A34A", bg: "#DCFCE7", border: "#86EFAC" },
+  { id: "justice",    label: "Community & Justice",  icon: "✊", color: "#7C3AED", bg: "#EDE9FE", border: "#C4B5FD" },
+];
 
 const SKINS = {
   civic: {
     id: "civic", appName: "LocalImpact", logo: "🏙️",
     tagline: "Who\'s been fighting for where you live",
-    primaryColor: "#2A5FA8", accentColor: "#C45D1A",
-    bgColor: "#F5F6FA", shellBg: "#D8DCE8",
+    primaryColor: "#0369A1", accentColor: "#F59E0B",
+    headerGradient: "linear-gradient(135deg, #0C4A6E 0%, #0284C7 55%, #22D3EE 100%)",
+    bgColor: "#F0F9FF", shellBg: "#D6ECF7",
+    tintBg: "#E0F2FE", tintBorder: "#7DD3FC",
     menuLabel: "General / Civic",
     menuDesc: "Everyone fighting for your neighborhood",
-    tabs: { delivered: "Won for you", inProgress: "Happening right now", involved: "Learn more & act" },
-    categories: [
-      { id: "env_health", label: "Environmental Health", color: "#2A7A4F", bg: "#EEF7F2", border: "#B8D8C4" },
-      { id: "climate",    label: "Climate & Energy",     color: "#C45D1A", bg: "#FEF3E6", border: "#F0C080" },
-      { id: "land",       label: "Land & Green Space",   color: "#5A8A6A", bg: "#F4FAF6", border: "#C8DDD0" },
-      { id: "justice",    label: "Community & Justice",  color: "#5A5A9A", bg: "#F0F0FA", border: "#C8C8E8" },
-    ],
+    tabs: { delivered: "Won for you", inProgress: "Fighting for you" },
+    categories: CATEGORIES,
   },
   sierra_club: {
     id: "sierra_club", appName: "LocalImpact", logo: "🌿",
     tagline: "Sierra Club\'s work in your neighborhood",
-    primaryColor: "#2D7A4F", accentColor: "#D47A2A",
-    bgColor: "#F7F5F0", shellBg: "#E8E4DC",
+    primaryColor: "#059669", accentColor: "#F97316",
+    headerGradient: "linear-gradient(135deg, #059669 0%, #10B981 55%, #34D399 100%)",
+    bgColor: "#F6FDF9", shellBg: "#DCEFE1",
+    tintBg: "#E6F9EF", tintBorder: "#9FE6BE",
     menuLabel: "Sierra Club",
     menuDesc: "Sierra Club\'s impact and campaigns",
     tabs: { delivered: "What we\'ve won", inProgress: "Fights in progress", involved: "Get involved" },
-    categories: [
-      { id: "env_health", label: "Environmental Health", color: "#2D7A4F", bg: "#EEF7F2", border: "#B8D8C4" },
-      { id: "climate",    label: "Climate & Energy",     color: "#D47A2A", bg: "#FEF3E6", border: "#F0C080" },
-      { id: "land",       label: "Land & Green Space",   color: "#5A8A6A", bg: "#F4FAF6", border: "#C8DDD0" },
-      { id: "justice",    label: "Community & Justice",  color: "#7A6A4A", bg: "#FAF8F0", border: "#E0D8C0" },
-    ],
+    categories: CATEGORIES,
   },
 };
 
 const CContext = createContext({});
 const SkinContext = createContext({});
 function makeC(s) {
-  return { bg: s.bgColor, white: "#FFFFFF", forest: "#1A3D2B", green: s.primaryColor,
-    greenLight: "#EEF7F2", border: "#E0DDD5", borderGreen: "#B8D8C4",
-    textMid: "#4A6355", textLight: "#8A9E92", amber: s.accentColor };
+  return { bg: s.bgColor, white: "#FFFFFF", forest: "#1E1B2E", green: s.primaryColor,
+    headerGradient: s.headerGradient,
+    greenLight: s.tintBg, borderGreen: s.tintBorder, border: "#E7E5EF",
+    textMid: "#55535F", textLight: "#93909E", amber: s.accentColor };
 }
 
 const ORGS = {
@@ -52,6 +56,21 @@ const ORGS = {
     what:"The NYC Group runs outings, advocates at Community Boards and City Hall, and mobilizes members around local campaigns.",
     how:"Attend open monthly meetings, join a campaign committee, or volunteer for river monitoring.",
     link:"https://www.sierraclub.org/atlantic/nyc" },
+  sc_florida: { id:"sc_florida", name:"Sierra Club Florida", emoji:"🌿", shortDesc:"Statewide environmental advocacy in Florida",
+    about:"Sierra Club Florida is the state chapter covering Florida, organizing on coastal resilience, clean water, and public lands protection statewide.",
+    what:"The Chapter campaigns on wetlands and coastal protection, nuclear and utility oversight, and sea level rise adaptation through litigation, legislation, and coalition advocacy.",
+    how:"Join a local group, attend public comment periods on state and municipal proposals, or donate.",
+    link:"https://www.sierraclub.org/florida" },
+  sc_illinois: { id:"sc_illinois", name:"Sierra Club Illinois", emoji:"🌿", shortDesc:"Statewide environmental advocacy in Illinois",
+    about:"Sierra Club Illinois is the state chapter, a founding member of the Illinois Clean Jobs Coalition and active on clean energy, air quality, and water advocacy statewide.",
+    what:"The Chapter campaigns for clean energy legislation, coal and fossil fuel plant accountability, and clean water protections through coalition organizing and legislative advocacy.",
+    how:"Sign up for action alerts, join a local group, or volunteer for a campaign.",
+    link:"https://www.sierraclub.org/illinois" },
+  sc_ohio: { id:"sc_ohio", name:"Sierra Club Ohio", emoji:"🌿", shortDesc:"Statewide environmental advocacy in Ohio",
+    about:"Sierra Club Ohio is the state chapter, engaged in utility oversight at the Public Utilities Commission of Ohio and water quality advocacy around Lake Erie and its watershed.",
+    what:"The Chapter campaigns on utility rate cases, clean energy jobs, and agricultural runoff regulation through coalition advocacy and public utility proceedings.",
+    how:"Sign up for action alerts, testify at PUCO hearings, or volunteer for a campaign.",
+    link:"https://www.sierraclub.org/ohio" },
   weact: { id:"weact", name:"WE ACT for Env. Justice", emoji:"✊", shortDesc:"Environmental justice in Northern Manhattan",
     about:"WE ACT was founded in 1988 in West Harlem and is one of the oldest environmental justice organizations in the country.",
     what:"WE ACT organizes communities affected by pollution to demand policy change across air quality, climate resilience, and transportation equity.",
@@ -109,9 +128,42 @@ const ORGS = {
     link:"https://www.cb11m.org" },
 };
 
+// Lightweight, fully client-side matcher behind the "what do you care about?"
+// input — no backend/LLM call. Good enough for a handful of topics and orgs;
+// a larger org catalog would want real classification instead of substring hits.
+const CATEGORY_KEYWORDS = {
+  env_health: ["air", "asthma", "pollution", "clean air", "water quality", "drinking water", "diesel", "smog", "toxic", "lead", "chemical", "health", "clean water"],
+  climate:    ["climate", "energy", "solar", "wind", "renewable", "carbon", "emissions", "coal", "gas", "power plant", "fossil fuel", "warming", "sea level", "flood"],
+  land:       ["park", "parks", "tree", "trees", "green space", "nature", "wildlife", "forest", "waterfront", "hiking", "outdoors", "conservation", "garden"],
+  justice:    ["justice", "equity", "community", "low-income", "vulnerable", "frontline", "advocacy", "policy", "organizing", "civic", "fairness"],
+};
+const ORG_KEYWORDS = {
+  sc_atlantic:    ["sierra club", "public lands", "regional advocacy", "litigation"],
+  sc_nyc:         ["sierra club", "nyc group", "manhattan", "local advocacy"],
+  sc_florida:     ["sierra club", "florida", "sierra club florida"],
+  sc_illinois:    ["sierra club", "illinois", "sierra club illinois"],
+  sc_ohio:        ["sierra club", "ohio", "sierra club ohio"],
+  weact:          ["environmental justice", "harlem", "we act", "asthma", "air quality"],
+  ny_renews:      ["clean energy", "climate justice", "renewable", "coalition", "clcpa"],
+  riverside_park: ["riverside park", "park", "green space", "waterfront"],
+  hrp:            ["hudson river park", "waterfront", "pier", "river"],
+  central_park:   ["central park", "park", "tree", "green space"],
+  les_ecology:    ["composting", "recycling", "lower east side", "environmental education"],
+  trees_ny:       ["urban forest", "tree", "planting", "pruner"],
+};
+function matchInterests(text) {
+  const q = text.toLowerCase();
+  if (!q.trim()) return { categories: [], orgs: [] };
+  return {
+    categories: Object.keys(CATEGORY_KEYWORDS).filter(id => CATEGORY_KEYWORDS[id].some(kw => q.includes(kw))),
+    orgs:       Object.keys(ORG_KEYWORDS).filter(id => ORG_KEYWORDS[id].some(kw => q.includes(kw))),
+  };
+}
+
 const LOCATION_DATA = {
   "33140": {
     "location": "Miami Beach, FL",
+    "coords": { "lat": 25.8267, "lon": -80.1208 },
     "neighborhoods": [
       "South Beach",
       "Mid-Beach",
@@ -128,7 +180,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club: Turkey Point Coalition",
         "group": "sc_supported",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       },
       {
         "summary": "Won a federal court ruling keeping Florida's wetlands in federal hands, protecting your flood buffer.",
@@ -140,7 +192,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Florida",
         "group": "sc_supported",
         "category": "land",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       },
       {
         "summary": "Pushed Miami Beach to adopt a formal Sea Level Rise Adaptation Plan covering your streets and property.",
@@ -152,7 +204,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Miami Group",
         "group": "sc_only",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       }
     ],
     "inProgress": [
@@ -166,7 +218,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Stop the Dredge Campaign",
         "group": "sc_supported",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       },
       {
         "summary": "Fighting federal rollbacks that would eliminate the climate protections Miami Beach depends on.",
@@ -178,7 +230,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Florida",
         "group": "sc_supported",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       }
     ],
     "involved": [
@@ -195,7 +247,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sign the Petition",
         "group": "other",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       },
       {
         "summary": "Show up to Miami-Dade County commission meetings when coastal permits are on the agenda.",
@@ -211,7 +263,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Miami \u2014 Get Involved",
         "group": "sc_only",
         "category": "justice",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       },
       {
         "summary": "Donate to Miami Waterkeeper, who tests your beach water every Thursday and leads the reef lawsuit.",
@@ -226,12 +278,13 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Donate to Miami Waterkeeper",
         "group": "other",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       }
     ]
   },
   "33138": {
     "location": "Miami Shores, FL",
+    "coords": { "lat": 25.8687, "lon": -80.1898 },
     "neighborhoods": [
       "Miami Shores",
       "Upper East Side",
@@ -248,7 +301,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club: Turkey Point Coalition",
         "group": "sc_supported",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       },
       {
         "summary": "Supported Everglades restoration advocacy that protects the water system filtering your drinking water.",
@@ -260,7 +313,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Everglades Coalition",
         "group": "sc_supported",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       }
     ],
     "inProgress": [
@@ -274,7 +327,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Miami Waterkeeper \u2014 Turkey Point",
         "group": "sc_supported",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       }
     ],
     "involved": [
@@ -291,7 +344,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Miami Waterkeeper",
         "group": "other",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       },
       {
         "summary": "Join Sierra Club Miami Group to stay informed and participate in local advocacy.",
@@ -306,7 +359,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Miami \u2014 Get Involved",
         "group": "sc_only",
         "category": "justice",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       },
       {
         "summary": "Contact your Miami-Dade County commissioner to ask about aquifer monitoring near Turkey Point.",
@@ -321,12 +374,13 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Miami-Dade Commission",
         "group": "other",
         "category": "justice",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_florida"
       }
     ]
   },
   "60637": {
     "location": "Hyde Park, Chicago, IL",
+    "coords": { "lat": 41.7943, "lon": -87.5907 },
     "neighborhoods": [
       "Hyde Park",
       "Kenwood",
@@ -343,7 +397,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club: Beyond Coal Illinois",
         "group": "sc_supported",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_illinois"
       },
       {
         "summary": "Helped pass Illinois' Climate and Equitable Jobs Act, putting your electricity on a legally mandated path to clean energy.",
@@ -355,7 +409,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club: Illinois CEJA Victory",
         "group": "sc_only",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_illinois"
       },
       {
         "summary": "Won a lawsuit requiring Chicago's water agency to stop dumping partially treated sewage into the river system.",
@@ -367,7 +421,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Chicago Group",
         "group": "sc_supported",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_illinois"
       }
     ],
     "inProgress": [
@@ -381,7 +435,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Illinois",
         "group": "sc_supported",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_illinois"
       },
       {
         "summary": "Defending CEJA implementation funding from federal rollbacks that would slow Illinois' clean energy transition.",
@@ -393,7 +447,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Illinois",
         "group": "sc_supported",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_illinois"
       }
     ],
     "involved": [
@@ -410,7 +464,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Illinois \u2014 Take Action",
         "group": "sc_only",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_illinois"
       },
       {
         "summary": "Volunteer with Sierra Club Chicago Group's river water monitoring program.",
@@ -425,7 +479,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Chicago Group",
         "group": "sc_only",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_illinois"
       },
       {
         "summary": "Support LVEJO and PERRO, the South Side organizations whose community leadership Sierra Club follows.",
@@ -440,12 +494,13 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "LVEJO.org",
         "group": "other",
         "category": "justice",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_illinois"
       }
     ]
   },
   "44141": {
     "location": "Brecksville, OH",
+    "coords": { "lat": 41.3251, "lon": -81.6273 },
     "neighborhoods": [
       "Brecksville",
       "Broadview Heights"
@@ -461,7 +516,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Ohio",
         "group": "sc_supported",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_ohio"
       },
       {
         "summary": "Advocated for Lake Erie clean water protections that safeguard Cuyahoga County's drinking water source.",
@@ -473,7 +528,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Ohio",
         "group": "sc_supported",
         "category": "env_health",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_ohio"
       }
     ],
     "inProgress": [
@@ -487,7 +542,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Ohio",
         "group": "sc_supported",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_ohio"
       },
       {
         "summary": "Pushing PUCO to distribute the $250 million FirstEnergy penalty fairly to Brecksville ratepayers.",
@@ -499,7 +554,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "PUCO.ohio.gov",
         "group": "sc_supported",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_ohio"
       }
     ],
     "involved": [
@@ -516,7 +571,7 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "Sierra Club Ohio \u2014 Take Action",
         "group": "sc_only",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_ohio"
       },
       {
         "summary": "Check your ratepayer refund status and submit comments to PUCO on the distribution process.",
@@ -531,12 +586,13 @@ const LOCATION_DATA = {
         "bulletLinkLabel": "PUCO \u2014 Consumer Information",
         "group": "other",
         "category": "climate",
-        "orgId": "sc_atlantic"
+        "orgId": "sc_ohio"
       }
     ]
   },
   "10001": {
-    "location": "Chelsea, New York, NY",
+    "location": "Chelsea, NY",
+    "coords": { "lat": 40.7501, "lon": -73.9970 },
     "neighborhoods": [
       "Chelsea",
       "Hell's Kitchen",
@@ -617,6 +673,7 @@ const LOCATION_DATA = {
   },
   "10002": {
     "location": "Lower East Side / Chinatown, NY",
+    "coords": { "lat": 40.7168, "lon": -73.9861 },
     "neighborhoods": [
       "Lower East Side",
       "Chinatown",
@@ -697,6 +754,7 @@ const LOCATION_DATA = {
   },
   "10007": {
     "location": "Tribeca / Financial District, NY",
+    "coords": { "lat": 40.7132, "lon": -74.0083 },
     "neighborhoods": [
       "Tribeca",
       "Financial District",
@@ -777,6 +835,7 @@ const LOCATION_DATA = {
   },
   "10011": {
     "location": "West Village / Greenwich Village, NY",
+    "coords": { "lat": 40.7336, "lon": -74.0027 },
     "neighborhoods": [
       "West Village",
       "Greenwich Village",
@@ -857,6 +916,7 @@ const LOCATION_DATA = {
   },
   "10025": {
     "location": "Upper West Side / Morningside Heights, NY",
+    "coords": { "lat": 40.7969, "lon": -73.9707 },
     "neighborhoods": [
       "Upper West Side",
       "Morningside Heights",
@@ -937,6 +997,7 @@ const LOCATION_DATA = {
   },
   "10029": {
     "location": "East Harlem / Spanish Harlem, NY",
+    "coords": { "lat": 40.7957, "lon": -73.9389 },
     "neighborhoods": [
       "East Harlem",
       "El Barrio",
@@ -1017,6 +1078,7 @@ const LOCATION_DATA = {
   },
   "10031": {
     "location": "Harlem, NY",
+    "coords": { "lat": 40.8253, "lon": -73.9490 },
     "neighborhoods": [
       "Central Harlem",
       "Hamilton Heights",
@@ -1097,6 +1159,7 @@ const LOCATION_DATA = {
   },
   "10065": {
     "location": "Upper East Side, NY",
+    "coords": { "lat": 40.7648, "lon": -73.9631 },
     "neighborhoods": [
       "Upper East Side",
       "Lenox Hill",
@@ -1177,6 +1240,7 @@ const LOCATION_DATA = {
   },
   "10128": {
     "location": "Yorkville / Carnegie Hill, NY",
+    "coords": { "lat": 40.7796, "lon": -73.9505 },
     "neighborhoods": [
       "Yorkville",
       "Carnegie Hill",
@@ -1260,17 +1324,14 @@ const LOCATION_DATA = {
 const TABS = [
   { id:"delivered",  tense:"past"    },
   { id:"inProgress", tense:"present" },
-  { id:"involved",   tense:"action"  },
 ];
 const TAB_COLORS = {
-  delivered:  { dot:"#2D7A4F", active:"#2D7A4F", activeBg:"#EEF7F2", border:"#B8D8C4" },
-  inProgress: { dot:"#D47A2A", active:"#D47A2A", activeBg:"#FEF3E6", border:"#F0C080" },
-  involved:   { dot:"#4A6355", active:"#4A6355", activeBg:"#F0EBE0", border:"#D8D0C4" },
+  delivered:  { dot:"#0369A1", active:"#0369A1", activeBg:"#E0F2FE", border:"#7DD3FC" },
+  inProgress: { dot:"#0369A1", active:"#0369A1", activeBg:"#E0F2FE", border:"#7DD3FC" },
 };
 const STORY_LABELS = {
   past:    ["The issue","Why it mattered","What was done","What happened"],
   present: ["The issue","Why it matters","What is being done","Where things stand"],
-  action:  [],
 };
 const NYC_LOCATIONS = [
   { zip:"10001", label:"Chelsea",                        sub:"Hell\'s Kitchen · Hudson Yards" },
@@ -1284,13 +1345,145 @@ const NYC_LOCATIONS = [
   { zip:"10128", label:"Yorkville / Carnegie Hill",      sub:"East 80s · East 90s" },
 ];
 
-function OrgSheet({ orgId, onClose }) {
+// Great-circle distance in miles between two lat/lon points.
+function haversineMiles(lat1, lon1, lat2, lon2) {
+  const R = 3958.8;
+  const toRad = d => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Finds the covered location whose centroid is closest to a sensed position.
+function nearestLocation(lat, lon) {
+  let bestZip = null, bestDist = Infinity;
+  for (const zip of Object.keys(LOCATION_DATA)) {
+    const c = LOCATION_DATA[zip].coords;
+    if (!c) continue;
+    const d = haversineMiles(lat, lon, c.lat, c.lon);
+    if (d < bestDist) { bestDist = d; bestZip = zip; }
+  }
+  return { zip: bestZip, distanceMiles: bestDist };
+}
+
+// localStorage keys so a manually chosen location and saved criteria stick
+// across a page reload instead of silently resetting to the defaults.
+const STORAGE_KEYS = {
+  zip: "localimpact.zip",
+  geoStatus: "localimpact.geoStatus",
+  interests: "localimpact.interests",
+};
+
+function readStoredZip() {
+  try {
+    const savedZip = window.localStorage.getItem(STORAGE_KEYS.zip);
+    const savedStatus = window.localStorage.getItem(STORAGE_KEYS.geoStatus);
+    if (savedZip && savedStatus === "manual" && LOCATION_DATA[savedZip]) return savedZip;
+  } catch {}
+  return null;
+}
+
+function readStoredInterests() {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEYS.interests);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    return {
+      query: typeof parsed.query === "string" ? parsed.query : "",
+      categories: Array.isArray(parsed.categories) ? parsed.categories : [],
+      orgs: Array.isArray(parsed.orgs) ? parsed.orgs : [],
+    };
+  } catch {}
+  return null;
+}
+
+// Matches a typed/dictated location description against the covered
+// locations, but only when confident: either the whole query is a direct
+// substring of a location's name/zip/neighborhood list, or every
+// significant word in the query appears there. A partial word overlap
+// (e.g. "new" and "york" both showing up just because one label happens to
+// spell out "New York" while its siblings abbreviate to "NY") is NOT
+// treated as a match — it's cheap coincidence, not a real signal, and
+// returning null here lets the caller fall through to real geocoding
+// instead of confidently snapping to the wrong neighborhood.
+function matchLocationQuery(text) {
+  const q = text.toLowerCase().trim();
+  if (!q) return null;
+  if (LOCATION_DATA[q]) return q;
+  const words = q.split(/[\s,]+/).filter(w => w.length > 2);
+  let bestZip = null, bestScore = 0;
+  for (const zip of Object.keys(LOCATION_DATA)) {
+    const entry = LOCATION_DATA[zip];
+    const haystack = [entry.location, ...(entry.neighborhoods || []), zip].join(" ").toLowerCase();
+    let score = 0;
+    if (haystack.includes(q)) {
+      score = q.length + 5;
+    } else if (words.length && words.every(w => haystack.includes(w))) {
+      score = words.length;
+    }
+    if (score > bestScore) { bestScore = score; bestZip = zip; }
+  }
+  return bestZip;
+}
+
+// Falls back to a real, free geocode (via /api/geocode, which proxies
+// OpenStreetMap Nominatim) when the local fuzzy match in matchLocationQuery
+// can't find anything — e.g. "Fort Lauderdale" or a street address that
+// isn't one of the 13 curated neighborhood names. Snaps the geocoded
+// coordinates to the nearest covered location the same way GPS sensing
+// does. Never throws: any failure just resolves to null, same as a local
+// match miss, so the caller's existing "do nothing, just close" handling
+// covers it for free.
+async function geocodeAndSnap(text) {
+  try {
+    const res = await fetch(`/api/geocode?q=${encodeURIComponent(text)}`);
+    if (!res.ok) return null;
+    const { lat, lon } = await res.json();
+    if (lat == null || lon == null) return null;
+    const nearest = nearestLocation(lat, lon);
+    return nearest.zip || null;
+  } catch {
+    return null;
+  }
+}
+
+// Opening this sheet at all IS "learn more" — the org bio below covers
+// that. Connect, Donate, and Volunteer all point to the org's own site
+// (the only verified link we have for it) since guessing at a distinct
+// donate/volunteer URL we haven't actually confirmed exists would be
+// exactly the kind of unverified claim this app is careful to avoid.
+// Share is real, working functionality: the device's native share sheet,
+// or a clipboard-copy fallback where that's not available.
+function ActionButton({ label, icon, onClick, href }) {
   const C = useContext(CContext);
-  const org = ORGS[orgId];
+  const style = { display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4, padding:"12px 8px", borderRadius:14, background:C.greenLight, border:`1px solid ${C.borderGreen}`, color:C.green, fontSize:12.5, fontWeight:700, textDecoration:"none", cursor:"pointer" };
+  const content = (<><span style={{ fontSize:17 }}>{icon}</span>{label}</>);
+  return href
+    ? <a href={href} target="_blank" rel="noopener noreferrer" style={style}>{content}</a>
+    : <div onClick={onClick} style={style}>{content}</div>;
+}
+
+function OrgSheet({ org: orgRef, onClose }) {
+  const C = useContext(CContext);
+  const org = typeof orgRef === "string" ? ORGS[orgRef] : orgRef;
+  const [shared, setShared] = useState(false);
   if (!org) return null;
+
+  const share = async () => {
+    const shareData = { title: org.name, text: `${org.name}: ${org.shortDesc}`, url: org.link };
+    try {
+      if (navigator.share) { await navigator.share(shareData); return; }
+      await navigator.clipboard.writeText(`${shareData.text}\n${org.link}`);
+      setShared(true);
+      setTimeout(() => setShared(false), 1800);
+    } catch {}
+  };
+
   return (
     <div onClick={onClose} style={{ position:"absolute", inset:0, zIndex:400, background:"rgba(0,0,0,0.4)", display:"flex", flexDirection:"column", justifyContent:"flex-end" }}>
-      <div onClick={e => e.stopPropagation()} style={{ background:C.white, borderRadius:"20px 20px 0 0", padding:"24px 20px 40px", maxHeight:"75%", overflowY:"auto" }}>
+      <div onClick={e => e.stopPropagation()} style={{ background:C.white, borderRadius:"20px 20px 0 0", padding:"24px 20px 40px", maxHeight:"80%", overflowY:"auto" }}>
         <div style={{ width:36, height:4, background:C.border, borderRadius:2, margin:"0 auto 20px" }} />
         <div style={{ display:"flex", alignItems:"flex-start", gap:12, marginBottom:16 }}>
           <div style={{ width:44, height:44, borderRadius:12, background:C.greenLight, border:`1px solid ${C.borderGreen}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>{org.emoji}</div>
@@ -1305,9 +1498,12 @@ function OrgSheet({ orgId, onClose }) {
             <div style={{ fontSize:13, color:C.textMid, lineHeight:1.7 }}>{text}</div>
           </div>
         ))}
-        <a href={org.link} target="_blank" rel="noopener noreferrer" style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, width:"100%", padding:13, borderRadius:12, background:C.green, color:C.white, fontSize:14, fontWeight:700, textDecoration:"none" }}>
-          Visit {org.name} ↗
-        </a>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:4 }}>
+          <ActionButton label="Connect" icon="🔗" href={org.link} />
+          <ActionButton label="Donate" icon="💛" href={org.link} />
+          <ActionButton label="Volunteer" icon="🙋" href={org.link} />
+          <ActionButton label={shared ? "Copied!" : "Share"} icon="📤" onClick={share} />
+        </div>
         <div onClick={onClose} style={{ textAlign:"center", marginTop:14, fontSize:13, color:C.textLight, cursor:"pointer" }}>Close</div>
       </div>
     </div>
@@ -1317,59 +1513,51 @@ function OrgSheet({ orgId, onClose }) {
 function StoryCard({ item, tense, tabId, onOrgClick }) {
   const C = useContext(CContext);
   const [open, setOpen] = useState(false);
-  const tc = TAB_COLORS[tabId];
-  const isAction = tense === "action";
+  const cat = CATEGORIES.find(c => c.id === item.category) || { color: TAB_COLORS[tabId].active };
+  const isAction = Array.isArray(item.steps);
   const labels = STORY_LABELS[tense];
   const storyFields = isAction ? [] : [item.issue, item.why, item.done, item.outcome];
-  const org = ORGS[item.orgId];
+  // Curated items reference an org by id (looked up in ORGS); live-searched
+  // items carry the full org profile inline since they aren't in ORGS.
+  const org = item.org || ORGS[item.orgId];
   return (
-    <div style={{ marginBottom:10 }}>
-      <div onClick={() => setOpen(!open)} style={{ display:"flex", gap:10, alignItems:"flex-start", cursor:"pointer" }}>
-        <div style={{ flexShrink:0, marginTop:7, width:7, height:7, borderRadius:"50%", background:tc.dot }} />
-        <div style={{ flex:1, fontSize:14, lineHeight:1.65, color:C.forest, background:C.white, border:`1px solid ${open ? tc.dot : C.border}`, borderRadius:12, padding:"11px 14px" }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8 }}>
-            <span style={{ flex:1 }}>{item.summary}</span>
-            <span style={{ color:C.textLight, fontSize:14, flexShrink:0, marginTop:2, transform:open ? "rotate(180deg)" : "none", transition:"transform 0.2s" }}>▾</span>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:9, gap:8, flexWrap:"wrap" }}>
-            {org && (
-              <div onClick={e => { e.stopPropagation(); onOrgClick(item.orgId); }}
-                style={{ display:"inline-flex", alignItems:"center", gap:5, background:C.greenLight, border:`1px solid ${C.borderGreen}`, borderRadius:20, padding:"3px 10px 3px 6px", cursor:"pointer" }}
-                onMouseEnter={e => e.currentTarget.style.background="#D4EDE0"}
-                onMouseLeave={e => e.currentTarget.style.background=C.greenLight}>
-                <span style={{ fontSize:13 }}>{org.emoji}</span>
-                <span style={{ fontSize:11, fontWeight:700, color:C.green }}>{org.name}</span>
-                <span style={{ fontSize:10, color:C.textLight }}>ⓘ</span>
-              </div>
-            )}
-            {item.bulletLink && (
-              <a href={item.bulletLink} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                style={{ display:"inline-flex", alignItems:"center", gap:3, fontSize:12, fontWeight:700, color:tc.active, textDecoration:"none", borderBottom:`1px solid ${tc.border}`, paddingBottom:1 }}>
-                ↗ {item.bulletLinkLabel}
-              </a>
-            )}
-          </div>
+    <div style={{ marginBottom:12 }}>
+      <div onClick={() => setOpen(!open)}
+        style={{ cursor:"pointer", background:C.white, borderRadius:16, borderLeft:`5px solid ${cat.color}`,
+          boxShadow: open ? `0 6px 16px ${cat.color}30` : "0 1px 3px rgba(30,20,50,0.07)",
+          padding:"14px 14px 14px 13px", transition:"box-shadow 0.15s" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10 }}>
+          <span style={{ flex:1, fontSize:15, fontWeight:650, lineHeight:1.5, color:C.forest }}>{item.summary}</span>
+          <span style={{ color:cat.color, fontSize:17, fontWeight:700, flexShrink:0, width:20, textAlign:"center", lineHeight:1 }}>{open ? "−" : "+"}</span>
         </div>
+        {org && (
+          <div onClick={e => { e.stopPropagation(); onOrgClick(item.org || item.orgId); }}
+            style={{ display:"flex", alignItems:"center", gap:7, marginTop:8, cursor:"pointer" }}>
+            <span style={{ fontSize:14 }}>{org.emoji}</span>
+            <span style={{ fontSize:12.5, fontWeight:700, color:C.green }}>{org.name}</span>
+            <span style={{ fontSize:11, fontWeight:700, color:C.green, marginLeft:"auto" }}>Learn more →</span>
+          </div>
+        )}
       </div>
       {open && !isAction && (
-        <div style={{ marginLeft:17, marginTop:6, background:C.white, border:`1px solid ${C.border}`, borderLeft:`3px solid ${tc.dot}`, borderRadius:"0 12px 12px 0", padding:16, fontSize:13, lineHeight:1.75, color:C.textMid }}>
+        <div style={{ marginTop:6, background:C.white, borderLeft:`5px solid ${cat.color}`, borderRadius:16, padding:16, fontSize:13.5, lineHeight:1.75, color:C.textMid, boxShadow:"0 1px 3px rgba(30,20,50,0.06)" }}>
           {storyFields.map((text, i) => (
             <div key={i} style={{ marginBottom:i < 3 ? 14 : 0 }}>
-              <div style={{ fontSize:10, fontWeight:700, color:tc.active, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:4 }}>{labels[i]}</div>
+              <div style={{ fontSize:10, fontWeight:800, color:cat.color, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:4 }}>{labels[i]}</div>
               <div>{text}</div>
             </div>
           ))}
         </div>
       )}
       {open && isAction && (
-        <div style={{ marginLeft:17, marginTop:6, background:C.white, border:`1px solid ${C.border}`, borderLeft:`3px solid ${tc.dot}`, borderRadius:"0 12px 12px 0", padding:16 }}>
+        <div style={{ marginTop:6, background:C.white, borderLeft:`5px solid ${cat.color}`, borderRadius:16, padding:16, boxShadow:"0 1px 3px rgba(30,20,50,0.06)" }}>
           {item.steps.map((step, i) => (
             <div key={i} style={{ display:"flex", gap:10, marginBottom:10, alignItems:"flex-start" }}>
-              <div style={{ flexShrink:0, width:20, height:20, borderRadius:"50%", background:C.greenLight, border:`1px solid ${C.borderGreen}`, fontSize:11, fontWeight:700, color:C.green, display:"flex", alignItems:"center", justifyContent:"center" }}>{i+1}</div>
-              <div style={{ fontSize:13, lineHeight:1.7, color:C.textMid, paddingTop:1 }}>{step}</div>
+              <div style={{ flexShrink:0, width:22, height:22, borderRadius:"50%", background:cat.color, fontSize:11, fontWeight:700, color:"#fff", display:"flex", alignItems:"center", justifyContent:"center" }}>{i + 1}</div>
+              <div style={{ fontSize:13, lineHeight:1.7, color:C.textMid, paddingTop:2 }}>{step}</div>
             </div>
           ))}
-          {item.link && <a href={item.link} target="_blank" rel="noopener noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:4, marginTop:6, fontSize:13, fontWeight:700, color:C.green, textDecoration:"none", borderBottom:`1px solid ${C.borderGreen}`, paddingBottom:1 }}>↗ {item.linkLabel}</a>}
+          {item.link && <a href={item.link} target="_blank" rel="noopener noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:4, marginTop:6, fontSize:13, fontWeight:700, color:cat.color, textDecoration:"none", borderBottom:`1px solid ${cat.border || C.borderGreen}`, paddingBottom:1 }}>↗ {item.linkLabel}</a>}
         </div>
       )}
     </div>
@@ -1389,10 +1577,10 @@ function CategoryGroupedList({ items, tense, tabId, interests, onOrgClick }) {
         if (catItems.length === 0) return null;
         return (
           <div key={cat.id}>
-            {ci > 0 && <div style={{ height:1, background:C.border, margin:"18px 0 14px" }} />}
+            {ci > 0 && <div style={{ height:14 }} />}
             <div style={{ marginBottom:12 }}>
-              <span style={{ fontSize:10, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:cat.color, background:cat.bg, border:`1px solid ${cat.border}`, padding:"3px 10px", borderRadius:20 }}>
-                {cat.label}
+              <span style={{ display:"inline-flex", alignItems:"center", gap:6, fontSize:11, fontWeight:800, letterSpacing:"0.03em", color:"#fff", background:cat.color, padding:"5px 12px 5px 8px", borderRadius:20, boxShadow:`0 2px 6px ${cat.color}55` }}>
+                <span style={{ fontSize:13 }}>{cat.icon}</span>{cat.label}
               </span>
             </div>
             {catItems.map((item, i) => <StoryCard key={i} item={item} tense={tense} tabId={tabId} onOrgClick={onOrgClick} />)}
@@ -1403,201 +1591,268 @@ function CategoryGroupedList({ items, tense, tabId, interests, onOrgClick }) {
   );
 }
 
-function InterestsPanel({ interests, onUpdate, onClose }) {
-  const C    = useContext(CContext);
-  const skin = useContext(SkinContext);
-  const [cats, setCats] = useState([...interests.categories]);
-  const [orgs, setOrgs] = useState([...interests.orgs]);
-  const toggleCat = id => setCats(p => p.includes(id) ? p.filter(c => c !== id) : [...p, id]);
-  const toggleOrg = id => setOrgs(p => p.includes(id) ? p.filter(o => o !== id) : [...p, id]);
-  const save = () => { onUpdate({ categories: cats, orgs }); onClose(); };
-  const nycOrgs = ["sc_atlantic","sc_nyc","weact","ny_renews","riverside_park","hrp","central_park","les_ecology","trees_ny"];
+// One question, one box, one Save. Typing (or dictating) what someone cares
+// about gets matched to topics and orgs entirely behind the scenes on Save —
+// no live preview, no checklists. Saving applies it and returns to the feed.
+function PreferencesPanel({ interests, onSave, onClose }) {
+  const C = useContext(CContext);
+  const [query, setQuery]         = useState(interests.query || "");
+  const [listening, setListening] = useState(false);
+  const speechSupported = typeof window !== "undefined" && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
+  const dictate = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR || listening) return;
+    const recognition = new SR();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = e => {
+      const transcript = e.results[0][0].transcript;
+      setQuery(prev => (prev.trim() ? `${prev.trim()}, ${transcript}` : transcript));
+    };
+    recognition.onerror = () => setListening(false);
+    recognition.onend = () => setListening(false);
+    setListening(true);
+    recognition.start();
+  };
+
+  const save = () => {
+    const matched = matchInterests(query);
+    onSave({ query, categories: matched.categories, orgs: matched.orgs });
+  };
+
   return (
     <div style={{ position:"absolute", inset:0, zIndex:300, background:C.bg, display:"flex", flexDirection:"column" }}>
-      <div style={{ padding:"52px 20px 16px", borderBottom:`1px solid ${C.border}`, flexShrink:0 }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
-          <div style={{ fontFamily:"Fraunces, serif", fontSize:18, fontWeight:700, color:C.forest }}>What matters to you?</div>
-          <div onClick={onClose} style={{ fontSize:13, fontWeight:600, color:C.textLight, cursor:"pointer" }}>Cancel</div>
-        </div>
-        <div style={{ fontSize:12, color:C.textLight }}>Select topics and organizations to personalize your feed. Leave all unselected to see everything.</div>
+      <div style={{ padding:"52px 20px 16px", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ fontFamily:"Fraunces, serif", fontSize:18, fontWeight:700, color:C.forest }}>Preferences</div>
+        <div onClick={onClose} style={{ width:30, height:30, borderRadius:"50%", background:C.greenLight, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:13, color:C.textMid }}>✕</div>
       </div>
-      <div style={{ flex:1, overflowY:"auto", padding:"16px 20px 100px" }}>
-        <div style={{ fontSize:11, fontWeight:700, color:C.textLight, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:12 }}>Topics</div>
-        {skin.categories.map(cat => {
-          const sel = cats.includes(cat.id);
-          return (
-            <div key={cat.id} onClick={() => toggleCat(cat.id)} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:sel ? cat.bg : C.white, border:`1.5px solid ${sel ? cat.color : C.border}`, borderRadius:12, padding:"13px 16px", marginBottom:8, cursor:"pointer" }}>
-              <div style={{ fontSize:14, fontWeight:600, color:C.forest }}>{cat.label}</div>
-              <div style={{ width:22, height:22, borderRadius:6, background:sel ? cat.color : C.bg, border:`1.5px solid ${sel ? cat.color : C.border}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, color:"#fff" }}>{sel ? "✓" : ""}</div>
+      <div style={{ flex:1, overflowY:"auto", padding:"4px 20px 100px" }}>
+        <div style={{ fontSize:11, fontWeight:700, color:C.textLight, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:4 }}>What do you care about?</div>
+        <div style={{ fontSize:12, color:C.textLight, marginBottom:14 }}>Type or say it in your own words.</div>
+        <div style={{ position:"relative" }}>
+          <textarea value={query} onChange={e => setQuery(e.target.value)} rows={7}
+            placeholder="e.g. clean air, parks and trees near me, climate change, protecting local wildlife…"
+            spellCheck="true" autoCapitalize="sentences" autoCorrect="on"
+            style={{ width:"100%", minHeight:190, border:`1.5px solid ${C.border}`, borderRadius:16, background:C.white, fontSize:15, lineHeight:1.6, color:C.forest, fontFamily:"Inter, sans-serif", padding:"16px 52px 16px 16px", resize:"vertical" }} />
+          {speechSupported && (
+            <div onClick={dictate} title="Dictate" style={{ position:"absolute", right:10, bottom:10, width:38, height:38, borderRadius:"50%", background:listening ? C.amber : C.greenLight, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", boxShadow:"0 2px 6px rgba(0,0,0,0.12)" }}>
+              <span style={{ fontSize:16 }}>{listening ? "●" : "🎙️"}</span>
             </div>
-          );
-        })}
-        <div style={{ height:1, background:C.border, margin:"20px 0 16px" }} />
-        <div style={{ fontSize:11, fontWeight:700, color:C.textLight, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:12 }}>Organizations</div>
-        {nycOrgs.map(orgId => {
-          const org = ORGS[orgId]; if (!org) return null;
-          const sel = orgs.includes(orgId);
-          return (
-            <div key={orgId} onClick={() => toggleOrg(orgId)} style={{ display:"flex", alignItems:"center", gap:12, background:sel ? C.greenLight : C.white, border:`1.5px solid ${sel ? C.green : C.border}`, borderRadius:12, padding:"12px 14px", marginBottom:8, cursor:"pointer" }}>
-              <div style={{ fontSize:20, flexShrink:0 }}>{org.emoji}</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:13, fontWeight:600, color:C.forest }}>{org.name}</div>
-                <div style={{ fontSize:11, color:C.textLight, marginTop:1 }}>{org.shortDesc}</div>
-              </div>
-              <div style={{ width:22, height:22, borderRadius:6, background:sel ? C.green : C.bg, border:`1.5px solid ${sel ? C.green : C.border}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, color:"#fff" }}>{sel ? "✓" : ""}</div>
-            </div>
-          );
-        })}
+          )}
+        </div>
       </div>
       <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:"16px 20px 32px", background:C.bg, borderTop:`1px solid ${C.border}` }}>
-        <div onClick={save} style={{ background:C.green, borderRadius:14, padding:14, textAlign:"center", fontSize:15, fontWeight:700, color:"#fff", cursor:"pointer" }}>Save preferences</div>
+        <div onClick={save} style={{ background:C.green, borderRadius:14, padding:14, textAlign:"center", fontSize:15, fontWeight:700, color:"#fff", cursor:"pointer", boxShadow:`0 6px 16px ${C.green}55` }}>Save</div>
       </div>
     </div>
   );
 }
 
-function SearchModal({ currentZip, onSelect, onClose }) {
+// Replaces the old browsable neighborhood list: type or dictate a location
+// description (address, city, zip) and matchLocationQuery resolves it, or
+// fall back to re-sensing GPS via "Use my current location".
+function LocationModal({ onSelectZip, onUseCurrentLocation, onClose }) {
   const C = useContext(CContext);
-  const [query, setQuery] = useState("");
-  const visible = query.trim() ? NYC_LOCATIONS.filter(l => l.label.toLowerCase().includes(query.toLowerCase()) || l.sub.toLowerCase().includes(query.toLowerCase()) || l.zip.includes(query.trim())) : NYC_LOCATIONS;
-  const pick = zip => { onSelect(zip); onClose(); };
+  const [query, setQuery]         = useState("");
+  const [listening, setListening] = useState(false);
+  const [saving, setSaving]       = useState(false);
+  const speechSupported = typeof window !== "undefined" && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
+  const dictate = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR || listening) return;
+    const recognition = new SR();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = e => setQuery(e.results[0][0].transcript);
+    recognition.onerror = () => setListening(false);
+    recognition.onend = () => setListening(false);
+    setListening(true);
+    recognition.start();
+  };
+
+  const save = async () => {
+    if (saving) return;
+    const localZip = matchLocationQuery(query);
+    if (localZip) { onSelectZip(localZip); onClose(); return; }
+    setSaving(true);
+    const geocodedZip = await geocodeAndSnap(query);
+    setSaving(false);
+    if (geocodedZip) onSelectZip(geocodedZip);
+    onClose();
+  };
+
   return (
     <div style={{ position:"absolute", inset:0, zIndex:300, background:C.bg, display:"flex", flexDirection:"column" }}>
-      <div style={{ padding:"52px 20px 16px", borderBottom:`1px solid ${C.border}`, flexShrink:0 }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
-          <div style={{ fontFamily:"Fraunces, serif", fontSize:18, fontWeight:700, color:C.forest }}>Choose a neighborhood</div>
-          <div onClick={onClose} style={{ fontSize:13, fontWeight:600, color:C.green, cursor:"pointer" }}>Cancel</div>
-        </div>
-        <div style={{ background:C.white, border:`1.5px solid ${C.border}`, borderRadius:12, display:"flex", alignItems:"center", padding:"3px 12px 3px 14px", gap:6 }}>
-          <span style={{ fontSize:13, color:C.textLight }}>🔍</span>
-          <input autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="Pick or enter location information…"
-            style={{ flex:1, border:"none", outline:"none", background:"transparent", fontSize:14, color:C.forest, fontFamily:"Inter, sans-serif", padding:"9px 4px" }} />
-          {query && <span onMouseDown={e => { e.preventDefault(); setQuery(""); }} style={{ fontSize:13, color:C.textLight, cursor:"pointer" }}>✕</span>}
-        </div>
+      <div style={{ padding:"52px 20px 16px", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ fontFamily:"Fraunces, serif", fontSize:18, fontWeight:700, color:C.forest }}>Change location</div>
+        <div onClick={onClose} style={{ width:30, height:30, borderRadius:"50%", background:C.greenLight, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:13, color:C.textMid }}>✕</div>
       </div>
-      <div style={{ flex:1, overflowY:"auto", padding:"12px 20px 32px" }}>
-        <div style={{ fontSize:11, fontWeight:700, color:C.textLight, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:12 }}>{query.trim() ? "Matching locations" : "Nearby locations"}</div>
-        {visible.map(loc => {
-          const active = loc.zip === currentZip;
-          return (
-            <div key={loc.zip} onClick={() => pick(loc.zip)} style={{ background:active ? C.greenLight : C.white, border:`1.5px solid ${active ? C.green : C.border}`, borderRadius:12, padding:"13px 16px", cursor:"pointer", marginBottom:8, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 }}
-              onMouseEnter={e => { if (!active) e.currentTarget.style.borderColor = C.green; }}
-              onMouseLeave={e => { if (!active) e.currentTarget.style.borderColor = C.border; }}>
-              <div>
-                <div style={{ fontSize:14, fontWeight:600, color:C.forest }}>{loc.label}</div>
-                <div style={{ fontSize:11, color:C.textLight, marginTop:2 }}>{loc.sub}</div>
-              </div>
-              {active ? <span style={{ color:C.green, fontSize:16 }}>✓</span> : <span style={{ color:C.textLight, fontSize:14 }}>→</span>}
+      <div style={{ flex:1, padding:"4px 20px 20px" }}>
+        <div style={{ fontSize:12, color:C.textLight, marginBottom:14 }}>Type or say an address, city, or zip code.</div>
+        <div style={{ display:"flex", alignItems:"center", gap:8, background:C.white, border:`1.5px solid ${C.border}`, borderRadius:14, padding:"4px 6px 4px 14px" }}>
+          <input autoFocus value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === "Enter" && save()}
+            placeholder="e.g. Miami Beach, 10025, Hyde Park…" spellCheck="true" autoCapitalize="words"
+            style={{ flex:1, minWidth:0, border:"none", outline:"none", background:"transparent", fontSize:14, color:C.forest, fontFamily:"Inter, sans-serif", padding:"10px 0" }} />
+          {speechSupported && (
+            <div onClick={dictate} title="Dictate" style={{ width:34, height:34, borderRadius:"50%", flexShrink:0, background:listening ? C.amber : C.greenLight, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+              <span style={{ fontSize:14 }}>{listening ? "●" : "🎙️"}</span>
             </div>
-          );
-        })}
-        {visible.length === 0 && <div style={{ fontSize:13, color:C.textLight, textAlign:"center", marginTop:24 }}>No neighborhoods match "{query}"</div>}
-      </div>
-    </div>
-  );
-}
+          )}
+        </div>
 
-function SkinMenu({ activeSkinId, onSelect, onClose }) {
-  return (
-    <div onClick={onClose} style={{ position:"absolute", inset:0, zIndex:400, background:"rgba(0,0,0,0.45)", backdropFilter:"blur(3px)", display:"flex", flexDirection:"column", justifyContent:"flex-end" }}>
-      <div onClick={e => e.stopPropagation()} style={{ background:"#fff", borderRadius:"20px 20px 0 0", padding:"20px 20px 40px" }}>
-        <div style={{ width:36, height:4, background:"#E0DDD5", borderRadius:2, margin:"0 auto 20px" }} />
-        <div style={{ fontFamily:"Fraunces, serif", fontSize:18, fontWeight:700, color:"#1A3D2B", marginBottom:4 }}>Choose a view</div>
-        <div style={{ fontSize:12, color:"#8A9E92", marginBottom:20 }}>Each view shows the same neighborhood through a different lens.</div>
-        {Object.values(SKINS).map(s => {
-          const active = s.id === activeSkinId;
-          return (
-            <div key={s.id} onClick={() => { onSelect(s.id); onClose(); }} style={{ display:"flex", alignItems:"center", gap:14, background:active ? s.bgColor : "#F7F5F0", border:`1.5px solid ${active ? s.primaryColor : "#E0DDD5"}`, borderRadius:14, padding:"14px 16px", marginBottom:10, cursor:"pointer" }}>
-              <div style={{ width:40, height:40, borderRadius:10, background:s.primaryColor, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0 }}>{s.logo}</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:14, fontWeight:700, color:"#1A3D2B", marginBottom:2 }}>{s.menuLabel}</div>
-                <div style={{ fontSize:12, color:"#8A9E92" }}>{s.menuDesc}</div>
-              </div>
-              {active && <span style={{ color:s.primaryColor, fontSize:18 }}>✓</span>}
-            </div>
-          );
-        })}
+        <div onClick={save} style={{ marginTop:14, background:C.green, borderRadius:14, padding:14, textAlign:"center", fontSize:15, fontWeight:700, color:"#fff", cursor:"pointer", boxShadow:`0 6px 16px ${C.green}55`, opacity:saving ? 0.7 : 1 }}>{saving ? "Finding…" : "Save"}</div>
+
+        <div style={{ display:"flex", alignItems:"center", gap:10, margin:"22px 0" }}>
+          <div style={{ flex:1, height:1, background:C.border }} />
+          <span style={{ fontSize:11, color:C.textLight, fontWeight:700, letterSpacing:"0.05em" }}>OR</span>
+          <div style={{ flex:1, height:1, background:C.border }} />
+        </div>
+
+        <div onClick={() => { onUseCurrentLocation(); onClose(); }}
+          style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, border:`1.5px solid ${C.borderGreen}`, background:C.greenLight, borderRadius:14, padding:14, cursor:"pointer" }}>
+          <span style={{ fontSize:15 }}>📍</span>
+          <span style={{ fontSize:14, fontWeight:700, color:C.green }}>Use my current location</span>
+        </div>
       </div>
     </div>
   );
 }
 
 export default function App() {
-  const [skinId, setSkinId]               = useState("civic");
-  const [zip, setZip]                     = useState("10025");
-  const [locData, setLocData]             = useState(LOCATION_DATA["10025"]);
+  const [skinId]                          = useState("civic");
+  const [initialManualZip]                = useState(() => readStoredZip());
+  const [zip, setZip]                     = useState(initialManualZip || "10025");
+  const [locData, setLocData]             = useState(LOCATION_DATA[initialManualZip || "10025"]);
   const [activeTab, setActiveTab]         = useState("delivered");
   const [searching, setSearching]         = useState(false);
-  const [showInterests, setShowInterests] = useState(false);
-  const [showMenu, setShowMenu]           = useState(false);
+  const [showPreferences, setShowPreferences] = useState(false);
   const [activeOrg, setActiveOrg]         = useState(null);
-  const [interests, setInterests]         = useState({ categories:[], orgs:[] });
+  const [interests, setInterests]         = useState(() => readStoredInterests() || { query:"", categories:[], orgs:[] });
+  const [geo, setGeo]                     = useState(() => initialManualZip ? { status:"manual", distanceMiles:null } : { status:"locating", distanceMiles:null });
 
   const skin = SKINS[skinId];
   const C    = makeC(skin);
 
-  const handleSelect       = z  => { setZip(z); setLocData(LOCATION_DATA[z]); setActiveTab("delivered"); };
-  const handleSkinChange   = id => { setSkinId(id); setActiveTab("delivered"); };
+  const locateMe = () => {
+    if (!("geolocation" in navigator)) { setGeo({ status:"unsupported", distanceMiles:null }); return; }
+    setGeo({ status:"locating", distanceMiles:null });
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const { latitude, longitude } = pos.coords;
+        const nearest = nearestLocation(latitude, longitude);
+        if (!nearest.zip) { setGeo({ status:"unsupported", distanceMiles:null }); return; }
+        setZip(nearest.zip);
+        setLocData(LOCATION_DATA[nearest.zip]);
+        setActiveTab("delivered");
+        setGeo({ status:"sensed", distanceMiles:nearest.distanceMiles });
+      },
+      () => setGeo({ status:"denied", distanceMiles:null }),
+      { enableHighAccuracy:false, timeout:8000, maximumAge:5 * 60 * 1000 }
+    );
+  };
+
+  // Only auto-sense on mount if the user hasn't explicitly picked a location
+  // in a prior session — a persisted manual choice sticks until they change
+  // it or explicitly tap "Use my current location" again.
+  useEffect(() => { if (!initialManualZip) locateMe(); }, []);
+
+  // Persist the location choice so a page reload (routine on mobile — a
+  // backgrounded or revisited tab) doesn't silently reset to the default zip
+  // and re-trigger GPS sensing. A manual pick is remembered; explicitly
+  // re-sensing clears it so future reloads go back to auto-sensing.
+  useEffect(() => {
+    try {
+      if (geo.status === "manual") {
+        window.localStorage.setItem(STORAGE_KEYS.zip, zip);
+        window.localStorage.setItem(STORAGE_KEYS.geoStatus, "manual");
+      } else if (geo.status === "sensed") {
+        window.localStorage.removeItem(STORAGE_KEYS.zip);
+        window.localStorage.removeItem(STORAGE_KEYS.geoStatus);
+      }
+    } catch {}
+  }, [zip, geo.status]);
+
+  // Persist "what you care about" the same way, so it survives a reload too.
+  useEffect(() => {
+    try { window.localStorage.setItem(STORAGE_KEYS.interests, JSON.stringify(interests)); } catch {}
+  }, [interests]);
+
+  const handleSelect       = z  => { setZip(z); setLocData(LOCATION_DATA[z]); setActiveTab("delivered"); setGeo({ status:"manual", distanceMiles:null }); };
+
+  // Preferences matching is entirely local and instant (matchInterests,
+  // already run inside PreferencesPanel) — no network call, nothing to wait
+  // on, so saving just applies it and closes.
+  const handleSavePreferences = updated => {
+    setInterests(updated);
+    setShowPreferences(false);
+  };
 
   const tab                 = TABS.find(t => t.id === activeTab);
-  const items               = locData[activeTab] || [];
+  // "Fighting for you" folds in the old "Get involved" content — the active
+  // campaigns and the concrete ways to join one are both part of the same
+  // ongoing fight, and splitting them into a third tab had silently made
+  // every "involved"-only category (all of "justice") unreachable.
+  const items                = activeTab === "inProgress"
+                              ? [...(locData.inProgress || []), ...(locData.involved || [])]
+                              : (locData[activeTab] || []);
   const currentNeighborhood = NYC_LOCATIONS.find(l => l.zip === zip);
   const hasPrefs            = interests.categories.length > 0 || interests.orgs.length > 0;
+  // A typed topic that matched none of the 4 curated categories would
+  // otherwise silently fall through to showing every story, unfiltered —
+  // indistinguishable from never having searched at all. Surface that
+  // honestly instead of pretending nothing happened.
+  const searchedNothingSpecific = !!interests.query?.trim() && !hasPrefs;
 
+  const locationLabel = geo.status === "locating" ? "Finding your location…" : (currentNeighborhood?.label || locData.location);
+  const locationSub   = geo.status === "locating" ? null : (currentNeighborhood?.sub || null);
   return (
     <CContext.Provider value={C}>
     <SkinContext.Provider value={skin}>
     <div style={{ minHeight:"100vh", background:skin.shellBg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 20px", fontFamily:"Inter, sans-serif" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Inter:wght@400;500;600;700&display=swap');
-        * { box-sizing:border-box; } ::-webkit-scrollbar { display:none; } input:focus { outline:none; } a:hover { opacity:0.8; }
+        * { box-sizing:border-box; } ::-webkit-scrollbar { display:none; } input:focus, textarea:focus { outline:none; } a:hover { opacity:0.8; }
+        @keyframes pulse { 0%, 100% { transform:scale(1); opacity:1; } 50% { transform:scale(1.15); opacity:0.7; } }
       `}</style>
 
       <div style={{ width:375, height:812, background:C.bg, borderRadius:52, flexShrink:0, boxShadow:"0 0 0 2px #C8C4BC, 0 0 0 4px #B0ACA4, 0 40px 80px rgba(0,0,0,0.2), inset 0 0 0 1px rgba(255,255,255,0.7)", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column" }}>
 
-        <div style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)", width:120, height:30, background:"#111", borderRadius:"0 0 20px 20px", zIndex:100 }} />
+        <div style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)", width:120, height:30, background:"rgba(0,0,0,0.28)", borderRadius:"0 0 20px 20px", zIndex:100 }} />
 
-        <div style={{ height:44, display:"flex", alignItems:"flex-end", justifyContent:"space-between", padding:"0 24px 6px", flexShrink:0 }}>
-          <span style={{ fontSize:15, fontWeight:700, color:C.forest }}>{new Date().toLocaleTimeString([],{ hour:"2-digit", minute:"2-digit" })}</span>
-          <span style={{ fontSize:11, color:C.textLight }}>●●●● WiFi 87%</span>
-        </div>
+        <div style={{ background:C.headerGradient, flexShrink:0, borderRadius:"0 0 26px 26px", paddingBottom:18, boxShadow:"0 4px 20px rgba(0,0,0,0.12)" }}>
+          <div style={{ height:30, display:"flex", alignItems:"flex-end", justifyContent:"flex-end", padding:"0 24px 6px" }}>
+            <span style={{ fontSize:11, color:"rgba(255,255,255,0.85)" }}>●●●● WiFi 87%</span>
+          </div>
 
-        <div style={{ padding:"8px 20px 12px", flexShrink:0, borderBottom:`1px solid ${C.border}` }}>
-          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:8 }}>
-            <div>
-              <div style={{ fontFamily:"Fraunces, serif", fontSize:19, fontWeight:900, color:C.forest, letterSpacing:"-0.02em", marginBottom:2 }}>
-                {skin.logo} {skin.appName}
-              </div>
-              <div style={{ fontSize:11, color:C.textLight }}>{skin.tagline}</div>
+          <div style={{ padding:"6px 20px 0" }}>
+            <div style={{ fontFamily:"Fraunces, serif", fontSize:21, fontWeight:900, color:"#fff", letterSpacing:"-0.02em", marginBottom:2 }}>
+              {skin.logo} {skin.appName}
             </div>
-            <div style={{ display:"flex", gap:6, flexShrink:0 }}>
-              <div onClick={() => setShowMenu(true)} style={{ background:"#111", borderRadius:10, padding:"7px 10px", display:"flex", alignItems:"center", gap:4, cursor:"pointer", boxShadow:"0 2px 8px rgba(0,0,0,0.15)" }}>
-                <span style={{ fontSize:14 }}>{skin.logo}</span>
-                <span style={{ fontSize:11, fontWeight:700, color:"#fff" }}>View</span>
+            <div style={{ fontSize:12, color:"rgba(255,255,255,0.85)" }}>{skin.tagline}</div>
+            <div style={{ marginTop:12, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 }}>
+              <div onClick={() => setSearching(true)} title="Tap to change location" style={{ display:"flex", alignItems:"baseline", flexWrap:"wrap", gap:"2px 6px", cursor:"pointer" }}>
+                <span style={{ fontSize:12, color:"#fff", alignSelf:"center", opacity:geo.status === "locating" ? 0.6 : 1 }}>📍</span>
+                <span style={{ fontSize:14, fontWeight:700, color:"#fff" }}>{locationLabel}</span>
+                {locationSub && <span style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>{locationSub}</span>}
               </div>
-              <div onClick={() => setShowInterests(true)} style={{ background:hasPrefs ? C.green : "#111", borderRadius:10, padding:"7px 10px", display:"flex", alignItems:"center", gap:4, cursor:"pointer", boxShadow:"0 2px 8px rgba(0,0,0,0.15)" }}>
-                <span style={{ fontSize:12 }}>⚙️</span>
-                <span style={{ fontSize:11, fontWeight:700, color:"#fff" }}>{hasPrefs ? "Filtered" : "Interests"}</span>
-              </div>
-              <div onClick={() => setSearching(true)} style={{ background:"#111", borderRadius:10, padding:"7px 10px", display:"flex", alignItems:"center", gap:4, cursor:"pointer", boxShadow:"0 2px 8px rgba(0,0,0,0.15)" }}>
-                <span style={{ fontSize:12 }}>🔍</span>
-                <span style={{ fontSize:11, fontWeight:700, color:"#fff" }}>Search</span>
+              <div onClick={() => setShowPreferences(true)} title="Your topics" style={{ flexShrink:0, display:"flex", alignItems:"center", gap:5, cursor:"pointer" }}>
+                <span style={{ fontSize:12.5, fontWeight:700, color:"#fff" }}>Your topics</span>
+                {hasPrefs && <span style={{ width:7, height:7, borderRadius:"50%", background:C.amber, flexShrink:0 }} />}
               </div>
             </div>
           </div>
-          <div style={{ marginTop:10, display:"flex", alignItems:"center", gap:6 }}>
-            <span style={{ fontSize:12, color:C.green }}>📍</span>
-            <span style={{ fontSize:13, fontWeight:700, color:C.forest }}>{currentNeighborhood?.label || locData.location}</span>
-            {currentNeighborhood && <span style={{ fontSize:11, color:C.textLight, marginLeft:2 }}>{currentNeighborhood.sub}</span>}
-          </div>
         </div>
 
-        <div style={{ display:"flex", flexShrink:0, borderBottom:`1px solid ${C.border}`, background:C.bg }}>
+        <div style={{ display:"flex", flexShrink:0, margin:"16px 20px 0", background:C.greenLight, borderRadius:999, padding:4, gap:4 }}>
           {TABS.map(t => {
             const tc = TAB_COLORS[t.id];
             const isActive = activeTab === t.id;
             return (
-              <div key={t.id} onClick={() => setActiveTab(t.id)} style={{ flex:1, textAlign:"center", padding:"10px 4px", fontSize:11, fontWeight:700, color:isActive ? tc.active : C.textLight, background:isActive ? tc.activeBg : "transparent", borderBottom:isActive ? `2px solid ${tc.active}` : "2px solid transparent", cursor:"pointer", lineHeight:1.3 }}>
+              <div key={t.id} onClick={() => setActiveTab(t.id)} style={{ flex:1, textAlign:"center", padding:"8px 4px", fontSize:11, fontWeight:800, borderRadius:999, color:isActive ? "#fff" : C.textMid, background:isActive ? tc.active : "transparent", boxShadow:isActive ? `0 3px 8px ${tc.active}66` : "none", cursor:"pointer", lineHeight:1.3, transition:"background 0.15s" }}>
                 {skin.tabs[t.id]}
               </div>
             );
@@ -1605,18 +1860,27 @@ export default function App() {
         </div>
 
         <div style={{ flex:1, overflowY:"auto", padding:"16px 20px 32px" }}>
+          {searchedNothingSpecific && (
+            <div style={{ background:C.greenLight, border:`1px solid ${C.borderGreen}`, borderRadius:12, padding:"10px 14px", marginBottom:14, fontSize:12, color:C.textMid, lineHeight:1.4 }}>
+              Nothing specific found for "{interests.query.length > 50 ? interests.query.slice(0, 50) + "…" : interests.query}" yet — showing everything happening near you instead.
+            </div>
+          )}
           <CategoryGroupedList items={items} tense={tab.tense} tabId={activeTab} interests={interests} onOrgClick={setActiveOrg} />
         </div>
 
-        {searching     && <SearchModal    currentZip={zip} onSelect={handleSelect}  onClose={() => setSearching(false)} />}
-        {showInterests && <InterestsPanel interests={interests} onUpdate={setInterests} onClose={() => setShowInterests(false)} />}
-        {activeOrg     && <OrgSheet       orgId={activeOrg} onClose={() => setActiveOrg(null)} />}
-        {showMenu      && <SkinMenu       activeSkinId={skinId} onSelect={handleSkinChange} onClose={() => setShowMenu(false)} />}
+        {searching       && <LocationModal     onSelectZip={handleSelect} onUseCurrentLocation={locateMe} onClose={() => setSearching(false)} />}
+        {activeOrg       && <OrgSheet          org={activeOrg} onClose={() => setActiveOrg(null)} />}
+        {showPreferences && <PreferencesPanel  interests={interests} onSave={handleSavePreferences} onClose={() => setShowPreferences(false)} />}
 
       </div>
 
       <div style={{ marginTop:16, fontSize:11, color:"#999", letterSpacing:"0.06em", textTransform:"uppercase", textAlign:"center" }}>
-        Manhattan, New York City · 9 neighborhoods covered
+        {Object.keys(LOCATION_DATA).length} locations covered
+        {geo.status === "sensed"      && " · using your location"}
+        {geo.status === "denied"      && " · location off, showing default"}
+        {geo.status === "unsupported" && " · location unavailable, showing default"}
+        {geo.status === "manual"      && " · manually selected"}
+        {geo.status === "locating"    && " · locating…"}
       </div>
     </div>
     </SkinContext.Provider>
