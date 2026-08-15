@@ -1,70 +1,50 @@
-// Vercel serverless function — the real-time location resolver, using
-// OpenStreetMap's free Nominatim service. There is no local dataset behind
-// this: every typed location and every sensed GPS position is looked up
-// live, every time, the same way a Google search would.
+// Vercel serverless function — free geocoding fallback for the "type or
+// dictate a location" flow, using OpenStreetMap's Nominatim.
 //
-// Two modes, both returning { lat, lon, label }:
-//   GET /api/geocode?q=<text>        forward: text -> coordinates
-//   GET /api/geocode?lat=&lon=       reverse: coordinates -> a real place name
+// The client already does local fuzzy matching against the 13 curated
+// locations first (matchLocationQuery in App.jsx). This only runs when that
+// fails — e.g. someone types "Fort Lauderdale" or a street address that
+// isn't one of the curated neighborhood names. It geocodes the text to real
+// coordinates so the app can snap to the nearest covered location exactly
+// like GPS sensing does, instead of silently finding nothing.
 //
 // Nominatim is free and needs no API key, but its usage policy requires a
 // real identifying User-Agent — set here since this runs server-side, which
 // also avoids a browser CORS/User-Agent restriction. Never throws to the
-// caller: any failure just resolves to nulls, so the client's "couldn't
-// find that" handling covers it for free.
-
-const HEADERS = {
-  "User-Agent": "LocalImpact-Demo/1.0 (https://github.com/hervejb/localimpact-demo)",
-  "Accept-Language": "en",
-};
-
-const EMPTY = { lat: null, lon: null, label: null };
-
-// Builds a short, human-readable label ("Chelsea, New York" or "Miami
-// Beach, Florida") from Nominatim's address breakdown, instead of exposing
-// its much longer full display_name.
-function buildLabel(address, fallback) {
-  if (!address) return fallback || null;
-  const neighborhood = address.neighbourhood || address.suburb || address.quarter;
-  const city = address.city || address.town || address.village || address.county;
-  const parts = [neighborhood, city, address.state].filter(Boolean);
-  // Drop consecutive duplicates — e.g. New York City's state is itself
-  // named "New York", which would otherwise repeat as "New York, New York".
-  const deduped = parts.filter((p, i) => p !== parts[i - 1]);
-  return deduped.length ? deduped.join(", ") : (fallback || null);
-}
+// caller: any failure just resolves to { lat: null, lon: null }.
 
 module.exports = async (req, res) => {
   if (req.method !== "GET") {
-    res.status(405).json(EMPTY);
+    res.status(405).json({ lat: null, lon: null });
     return;
   }
 
-  const query = req.query || {};
-  const lat = query.lat != null ? parseFloat(query.lat) : null;
-  const lon = query.lon != null ? parseFloat(query.lon) : null;
-  const q = (query.q || "").toString().trim().slice(0, 200);
+  const q = (req.query && req.query.q || "").toString().trim().slice(0, 200);
+  if (!q) {
+    res.status(200).json({ lat: null, lon: null });
+    return;
+  }
 
   try {
-    if (lat != null && lon != null && !Number.isNaN(lat) && !Number.isNaN(lon)) {
-      const url = `https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&lat=${lat}&lon=${lon}`;
-      const response = await fetch(url, { headers: HEADERS });
-      if (!response.ok) { res.status(200).json(EMPTY); return; }
-      const result = await response.json();
-      if (!result || result.lat == null) { res.status(200).json(EMPTY); return; }
-      res.status(200).json({ lat: parseFloat(result.lat), lon: parseFloat(result.lon), label: buildLabel(result.address, result.display_name) });
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`;
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "LocalImpact-Demo/1.0 (https://github.com/hervejb/localimpact-demo)",
+        "Accept-Language": "en",
+      },
+    });
+    if (!response.ok) {
+      res.status(200).json({ lat: null, lon: null });
       return;
     }
-
-    if (!q) { res.status(200).json(EMPTY); return; }
-    const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q=${encodeURIComponent(q)}`;
-    const response = await fetch(url, { headers: HEADERS });
-    if (!response.ok) { res.status(200).json(EMPTY); return; }
     const results = await response.json();
-    if (!Array.isArray(results) || !results.length) { res.status(200).json(EMPTY); return; }
-    const result = results[0];
-    res.status(200).json({ lat: parseFloat(result.lat), lon: parseFloat(result.lon), label: buildLabel(result.address, result.display_name) });
+    if (!Array.isArray(results) || !results.length) {
+      res.status(200).json({ lat: null, lon: null });
+      return;
+    }
+    const { lat, lon } = results[0];
+    res.status(200).json({ lat: parseFloat(lat), lon: parseFloat(lon) });
   } catch (err) {
-    res.status(200).json(EMPTY);
+    res.status(200).json({ lat: null, lon: null });
   }
 };
