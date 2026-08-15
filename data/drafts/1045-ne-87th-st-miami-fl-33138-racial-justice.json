@@ -26,13 +26,13 @@
       "plannedActivities": [
         {
           "category": "justice",
-          "text": "Runs an annual Juneteenth event at Barry University drawing 150+ attendees, held for at least the last two years as of October 2025.",
-          "link": "https://www.wlrn.org/south-florida/2025-10-08/10-years-of-racial-healing-south-florida-people-of-color-builds-bridges-through-dialogue",
-          "linkLabel": "WLRN: 10 Years of Racial Healing",
+          "text": "Presenting 'Uhuru: Liberation through Education and Cultural Creativity,' a Juneteenth celebration at Barry University on June 19, with a keynote from historian Dr. Tameka Hobbs — their third consecutive year partnering with Barry on the event.",
+          "link": "https://www.barry.edu/en/newsroom/uhuru--14963299424/",
+          "linkLabel": "Barry University newsroom",
           "locality": "hyperlocal"
         }
       ]
     }
   ],
-  "reviewNotes": "The mayor-election claim needed care: the source article quotes the founder's own account ('Three years after the first meeting on political representation...Miami Shores got our first Black mayor') without naming the mayor or independently establishing causation. Wrote the bullet to attribute the claim to the founder rather than presenting it as an established fact — this is exactly the kind of claim that's easy to overstate if you only read a search snippet instead of the source."
+  "reviewNotes": "Two corrections from a follow-up recency check. (1) The mayor-election claim needed care: the source article quotes the founder's own account ('Three years after the first meeting on political representation...Miami Shores got our first Black mayor') without naming the mayor or independently establishing causation — attributed to the founder rather than stated as fact. (2) The Juneteenth item was UPGRADED, not just verified: the original citation only established a recurring pattern ('for the last two years' as of Oct 2025); a follow-up search found the actual named, dated 2026 event with a specific speaker, which is a stronger, more current citation than what first surfaced. Recency checks don't only catch bad claims — they can also replace a vague-but-true one with a specific-and-verified one."
 }

@@ -42,9 +42,9 @@
       "plannedActivities": [
         {
           "category": "justice",
-          "text": "The Village Council is actively working to restore and protect the eroding Sherwood Forest archaeological mound, raised as a concern at a July 2024 council meeting alongside code enforcement issues in the area.",
+          "text": "As of a July 2024 Village Council meeting, the council was discussing how to restore and protect the eroding Sherwood Forest archaeological mound. No coverage found since then confirming whether this turned into an actual restoration effort or stalled — status as of today is unconfirmed, not verified-ongoing.",
           "link": "https://thelocallens.org/el-portal-discusses-historic-mound-preservation-and-code-enforcement/",
-          "linkLabel": "LocalLens: El Portal mound preservation discussion",
+          "linkLabel": "LocalLens: El Portal mound preservation discussion (July 2024)",
           "locality": "hyperlocal"
         },
         {
@@ -57,5 +57,5 @@
       ]
     }
   ],
-  "reviewNotes": "Strongest hyperlocal hit rate of the four topics tested. The mound/seawall are literally in El Portal, a village of ~2,300 people — small-village-scale civic topics beat watershed-scale environmental ones on the 10-mile test, as predicted. Note: 'Village of El Portal' is a municipal government, not a 501(c)(3) — included on the same precedent as NYC Planning/NYC Buildings appearing in the original curated dataset as legitimate civic orgs."
+  "reviewNotes": "Strongest hyperlocal hit rate of the four topics tested. The mound/seawall are literally in El Portal, a village of ~2,300 people — small-village-scale civic topics beat watershed-scale environmental ones on the 10-mile test, as predicted. Note: 'Village of El Portal' is a municipal government, not a 501(c)(3) — included on the same precedent as NYC Planning/NYC Buildings appearing in the original curated dataset as legitimate civic orgs. UPDATE from a recency check: the mound-preservation item downgraded from 'actively working to restore' to 'as of July 2024, was discussing' — no follow-up coverage confirms current status. The field school and seawall-designation items held up as genuinely dated and current/permanent respectively; the septic and Juneteenth items in the other two drafts also held up or improved. Net across all 'present' tense claims tested so far: 2 held up, 1 improved, 1 stale/unconfirmed (this one), 1 contradicted (food pantry hours), 1 was flat wrong (clean water draft, since corrected)."
 }
