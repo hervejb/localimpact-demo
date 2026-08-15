@@ -1,0 +1,45 @@
+{
+  "query": "1045 NE 87th St, Miami, FL 33138",
+  "topic": "clean water",
+  "capturedAt": "2026-08-15T00:00:00.000Z",
+  "capturedNear": {
+    "lat": 25.855548,
+    "lon": -80.175468,
+    "displayName": "1045, Northeast 87th Street, Miami, Miami-Dade County, Florida, 33138, United States"
+  },
+  "capturedVia": "manual chat research (no API key), retested against the locality-grading refinement",
+  "organizations": [
+    {
+      "name": "Miami Waterkeeper",
+      "emoji": "🌊",
+      "overview": "Miami Waterkeeper (formerly Biscayne Bay Waterkeeper) is a Miami-based nonprofit that has worked since 2010 to protect Biscayne Bay and Miami-Dade's waterways through science, community engagement, and legal advocacy.",
+      "link": "https://www.miamiwaterkeeper.org/",
+      "accomplishments": [
+        {
+          "category": "env_health",
+          "text": "Won legal standing to join a federal Clean Water Act lawsuit against Miami-Dade County over water and sewer infrastructure the county allegedly failed to repair for as much as 50 years.",
+          "link": "https://www.miaminewtimes.com/opinion/judge-allows-environmental-group-to-join-miami-dade-water-and-sewer-lawsuit-6538889/",
+          "linkLabel": "Miami New Times",
+          "locality": "regional"
+        }
+      ],
+      "plannedActivities": [
+        {
+          "category": "env_health",
+          "text": "Running a 'Stop Septic Pollution' campaign for Miami-Dade County. Both Miami Shores and El Portal, the two villages bordering this address, have active septic-to-sewer conversion projects (Miami Shores' $3M Shores Estates project started June 2025; El Portal's $20.3M plan covers ~840 septic properties) — though this exact property's own septic vs. sewer status isn't confirmed.",
+          "link": "https://www.miamiwaterkeeper.org/south_florida_septic_story",
+          "linkLabel": "Miami Waterkeeper",
+          "locality": "regional"
+        },
+        {
+          "category": "env_health",
+          "text": "Opposing Miami-Dade's $12.6 billion water and sewer repair plan, arguing it fails to account for sea-level rise and storm surge risk.",
+          "link": "https://www.miaminewtimes.com/opinion/judge-allows-environmental-group-to-join-miami-dade-water-and-sewer-lawsuit-6538889/",
+          "linkLabel": "Miami New Times",
+          "locality": "regional"
+        }
+      ]
+    }
+  ],
+  "reviewNotes": "All three claims graded 'regional' under the new standard — none would be false 10+ miles away in Miami-Dade, which matches the honest B- assessment from the prior grading pass. The septic bullet is the closest to hyperlocal (real, dated, nearby evidence) but stays 'regional' since this specific property's septic/sewer status wasn't confirmed. No 'hyperlocal' claims were found for this address on this topic — a genuine, honest result, not a search failure. Broadening the topic (e.g. away from just 'clean water') or trying a smaller place name might surface something tighter."
+}

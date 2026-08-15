@@ -24,6 +24,8 @@ import path from "node:path";
 
 const CATEGORY_IDS = ["env_health", "climate", "land", "justice"];
 
+const LOCALITY_LEVELS = ["hyperlocal", "regional"];
+
 const BULLET_SCHEMA = {
   type: "object",
   properties: {
@@ -31,8 +33,15 @@ const BULLET_SCHEMA = {
     text: { type: "string" },
     link: { type: "string" },
     linkLabel: { type: "string" },
+    // hyperlocal: this claim would be notably weaker or false for a place
+    // 10+ miles away elsewhere in the region — it's genuinely about HERE.
+    // regional: true, real, cited — but equally true across the metro
+    // area/county. Not wrong to include, just shouldn't outrank something
+    // that's actually specific to this exact place. Default to regional
+    // unless there's a concrete, specific reason it isn't.
+    locality: { type: "string", enum: LOCALITY_LEVELS },
   },
-  required: ["category", "text", "link", "linkLabel"],
+  required: ["category", "text", "link", "linkLabel", "locality"],
   additionalProperties: false,
 };
 
@@ -74,7 +83,12 @@ Rules:
 - Keep bullet language direct, factual, and easy to scan.
 - category (per bullet) must be the single best fit from: env_health (environmental health, clean air/water), climate (climate & energy), land (parks, green space, land use), justice (community, racial, or environmental justice, civic advocacy).
 - Return at most 4 organizations. If you find fewer well-sourced organizations, return fewer — do not pad with weak or unverifiable ones. An organization with zero verifiable accomplishments or planned activities should be dropped. If you find nothing solid, return an empty organizations array — that is a correct, honest answer.
-- Prefer local or regional organizations over large national ones when both exist for the same topic and place.`;
+- Prefer local or regional organizations over large national ones when both exist for the same topic and place.
+
+Grading each bullet's "locality" — this is the most important rule, apply it strictly:
+- Ask yourself: "would this exact claim be meaningfully weaker or false for a place 10+ miles away, elsewhere in the same metro area or county?" If yes, tag it "hyperlocal" — it's tied to a specific facility, waterway, district, jurisdiction, or documented neighborhood-specific program near THIS place.
+- If the claim is true broadly across the whole metro area/county/state and isn't more true here than anywhere else in it, tag it "regional." A regional claim is still real and worth including — just be honest that it's about the wider area, not this specific place. Default to "regional" whenever you're not certain.
+- If a bullet's local relevance depends on a fact about this specific address/block/neighborhood that you could not verify (e.g., whether this exact area has a specific zoning designation, is on septic vs. sewer, sits in a particular flood zone or district), say so explicitly in the bullet's own text — e.g., "if this area is on septic..." — rather than stating it as certain. Do not silently assume a property-specific fact you have not confirmed.`;
 }
 
 function userPrompt(topic, locationLabel) {
@@ -163,6 +177,15 @@ async function main() {
   console.log(`\nResearching${topic ? ` "${topic}"` : " (no topic — broad scan)"} near ${geo.displayName}...`);
   const organizations = await researchGemini(apiKey, topic, geo.displayName);
 
+  // Hyperlocal first within each list — a claim genuinely about this place
+  // should outrank one that's just true regionally, not sit alongside it
+  // with equal weight.
+  const byLocality = (a, b) => (a.locality === "hyperlocal" ? 0 : 1) - (b.locality === "hyperlocal" ? 0 : 1);
+  for (const org of organizations) {
+    org.accomplishments = [...(org.accomplishments || [])].sort(byLocality);
+    org.plannedActivities = [...(org.plannedActivities || [])].sort(byLocality);
+  }
+
   const draft = {
     query: locationQuery,
     topic: topic || null,
@@ -181,11 +204,12 @@ async function main() {
   for (const org of organizations) {
     console.log(`- ${org.name} (${org.accomplishments.length} accomplishment(s), ${org.plannedActivities.length} planned)`);
     for (const b of [...org.accomplishments, ...org.plannedActivities]) {
-      console.log(`    [${b.category}] ${b.text}`);
+      console.log(`    [${b.locality === "hyperlocal" ? "📍 hyperlocal" : "🌐 regional  "}] [${b.category}] ${b.text}`);
       console.log(`      source: ${b.link}`);
     }
   }
   console.log(`\nReview every citation link before trusting this — grounded search still occasionally overstates or misreads a source.`);
+  console.log(`Also sanity-check the locality tags: "regional" bullets are honest, but shouldn't dominate a location's list — if everything comes back regional, the search may need a tighter, more specific topic or a smaller place name.`);
 }
 
 main().catch(err => {
